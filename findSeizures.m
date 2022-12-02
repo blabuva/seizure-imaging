@@ -100,7 +100,7 @@ outfn = sprintf('%s%sseizures.mat',fp,'\'); % name of the output file
 %toolbox function of the same name sometimes shadows the MATLAB signal
 %processing toolobox version (i.e. the version we actually want)
 fpList = which('findpeaks.m','-all'); % find all 'findpeaks.m'
-fpInd = find(contains(fpList,'/toolbox/signal/signal/findpeaks.m'),1,'first'); %get location of the correct 'findpeaks.m'
+fpInd = find(contains(fpList,[filesep 'toolbox' filesep 'signal' filesep 'signal' filesep 'findpeaks.m']),1,'first'); %get location of the correct 'findpeaks.m'
 currdir = cd; % save current directory path
 cd(fileparts(fpList{fpInd})); % change directory to locatin of correct 'findpeaks.m'
 fpFun = @findpeaks; % set function handle to correct 'findpeaks.m'
