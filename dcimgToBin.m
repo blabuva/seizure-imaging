@@ -1,10 +1,10 @@
 function dcimgToBin(filename)
-%%
-% dcimgToBin converts image data in .dcimg files to .imgbin files, which are binary files that Matlab can read easily
+%% dcimgToBin converts image data in .dcimg files to .imgbin files, which are binary files that Matlab can read easily
 % INPUTS:
 %   filename - full path to the directory containing RHD files
+%
 % OUTPUTS:
-%   NONE - the .imgbin file is saved to the same directory with the same name as the .dcimg file; only the extension changes (to .imgbin)
+%   NONE - the .imgbin file is saved to the same directory with the same name as the .dcimg file; only the extension changes to .imgbin
 %
 % Written by Scott Kilianski
 % 10/11/2022

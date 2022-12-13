@@ -57,7 +57,7 @@ if isempty(filename)
         filename = fullfile(fp,fn);
     end
 end
-[fp, fn, fext] = fileparts(filename);   % get file name, path, and extension
+[fp, fn, fext] = fileparts(filename);           % get file name, path, and extension
 if strcmp(fext,'.adicht')
     EEG = adiLoadEEG(filename,eegChannel,targetFS);     % loads .adicht files
 elseif strcmp(fext,'.rhd')
@@ -84,9 +84,14 @@ pzit = 2; % gap length under which to merge (seconds)
 mszt = .5; % minimum seizure time duration (seconds)
 ttv = -std(EEG.data)*ttv; % calculate trough threshold value (standard deviation * user-defined multiplier)
 tb = 2; % time buffer (in seconds) - time to grab before and after each detected seizure
-startEnd = [t(riseI)-tb,t(fallI)+tb]; %seizure start and end times
+%-------------------------------------------------------------------------%
+% INCLUDE BIT HERE TO CHECK IF CODE IS TRYING TO GRAB TIME OUTSIDE OF ACTUAL DATA (BECAUSE OF TIME BUFFER AROUND PUTATIVE SEIZURES)
+% INCLUDE BIT HERE TO REMOVE UNMATCHED RISES AND FALLS
+%-------------------------------------------------------------------------%
+
+startEnd = [t(riseI)-tb,t(fallI)+tb];           % seizure start and end times
 startEnd_interp = interp1(EEG.time,EEG.time,...
-    startEnd,'nearest'); % interpolate from spectrogram time to nearest EEG timestamps
+    startEnd,'nearest');                    % interpolate from spectrogram time to nearest EEG timestamps
 startEnd_interp = szmerge(startEnd_interp, pzit); % merge seizure if/when appropriate
 tooShortLog = diff(startEnd_interp,1,2)<mszt; % find too-short seizures
 startEnd_interp(tooShortLog,:) = []; % remove seizures that are too short
