@@ -88,7 +88,7 @@ tb = 2; % time buffer (in seconds) - time to grab before and after each detected
 % INCLUDE BIT HERE TO CHECK IF CODE IS TRYING TO GRAB TIME OUTSIDE OF ACTUAL DATA (BECAUSE OF TIME BUFFER AROUND PUTATIVE SEIZURES)
 % INCLUDE BIT HERE TO REMOVE UNMATCHED RISES AND FALLS
 %-------------------------------------------------------------------------%
-if fallI(1) > riseI(1)
+if fallI(1) < riseI(1)
     fallI(1) = [];
 end
 if riseI(end) > fallI(end)
