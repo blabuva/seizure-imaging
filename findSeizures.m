@@ -18,7 +18,7 @@ function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, target
 %   seizures - structure containing information about detected seizures
 %
 % Written by Scott Kilianski
-% Updated 11/1/2022
+% Updated 12/14/2022
 
 %% Parse inputs
 validScalarNum = @(x) isnumeric(x) && isscalar(x);
@@ -88,7 +88,12 @@ tb = 2; % time buffer (in seconds) - time to grab before and after each detected
 % INCLUDE BIT HERE TO CHECK IF CODE IS TRYING TO GRAB TIME OUTSIDE OF ACTUAL DATA (BECAUSE OF TIME BUFFER AROUND PUTATIVE SEIZURES)
 % INCLUDE BIT HERE TO REMOVE UNMATCHED RISES AND FALLS
 %-------------------------------------------------------------------------%
-
+if fallI(1) > riseI(1)
+    fallI(1) = [];
+end
+if riseI(end) > fallI(end)
+    riseI(end) = [];
+end
 startEnd = [t(riseI)-tb,t(fallI)+tb];           % seizure start and end times
 startEnd_interp = interp1(EEG.time,EEG.time,...
     startEnd,'nearest');                    % interpolate from spectrogram time to nearest EEG timestamps
