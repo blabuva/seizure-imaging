@@ -10,8 +10,7 @@ function EEG = intanLoadEEG(dirname,eegChannel,targetFS)
 %       data - actual values of EEG (in volts)
 %       time - times corresponding to values in data field (in seconds)
 %       tartgetFS - target sampling frequency specified by user (in samples/second)
-%       finalFS - the sampling frequency ultimately used (in
-%       samples/second)
+%       finalFS - the sampling frequency ultimately used (in samples/second)
 %
 % Written by Scott Kilianski
 % 10/10/2022
@@ -34,7 +33,8 @@ rhdList = rhdList(contains({rhdList.name},'.rhd')); % keep only files with .rhd 
 EEGdata = []; EEGtime = []; % intialize EEGdata and EEGtime because they get concatenated in the loop below
 for fi = 1:numel(rhdList)
     fprintf('Loading analog data from file %d of %d total RHD files...\n',fi,numel(rhdList));
-    currRHDdata = sk_readRHD(fullfile(rhdList(fi).folder,rhdList(fi).name));
+%     currRHDdata = sk_readRHD(fullfile(rhdList(fi).folder,rhdList(fi).name));
+    currRHDdata = sk_readRHD_analogOnly(fullfile(rhdList(fi).folder,rhdList(fi).name));
     EEGdata = [EEGdata, currRHDdata.board_adc_data];
     EEGtime = [EEGtime, currRHDdata.t_amplifier];
 end
