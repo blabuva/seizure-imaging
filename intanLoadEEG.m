@@ -1,8 +1,8 @@
-function EEG = intanLoadEEG(dirname,eegChannel,targetFS)
+function EEG = intanLoadEEG(filename,eegChannel,targetFS)
 %%
 % intanLoadEEG loads and downsamples EEG data from an Intan RHD file(s)
 % INPUTS:
-%   dirname - full path to the directory containing RHD files
+%   filename - full path to a file in the directory containing RHD files to be used
 %   eegChannel - channel number of the EEG, typically 1. Also allowed is a 2-element vector. If given, this will produce a 2-element structure output, one for each of the 2 analog channels in the Intan RHD file(s)
 %   targetFS - desired sampling frequency. This is useful for downsampling EEG data and making it easier to work with
 % OUTPUTS:
@@ -25,6 +25,7 @@ end
 
 %% Navigate directory and properly structure filepaths
 funClock = tic;     % function clock
+dirname = fileparts(filename);
 fprintf('Loading analog data in\n%s...\n',dirname);
 rhdList = dir(dirname); %get structure for directory with RHD files
 rhdList = rhdList(contains({rhdList.name},'.rhd')); % keep only files with .rhd extension

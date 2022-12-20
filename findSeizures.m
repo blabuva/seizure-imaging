@@ -13,6 +13,8 @@ function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, target
 %   Name: 'eegChannel'   Value: channel number of the EEG (usually 1 or 2) (default = 1)
 %   Name: 'targetFS'     Value: target sampling frequency. Used to downsample data to
 %                               reduce computational load (default = 200)
+%   Name: 'plotFlag'     Value: 0 or 1 for no plot or plotting options, respectively (default = 1)
+%   %------------------------------------------------------------%
 %
 % OUTPUTS:
 %   seizures - structure containing information about detected seizures
@@ -30,7 +32,7 @@ default_eegChannel = 1;
 default_targetFS = 200;
 default_plotFlag = 1;
 p = inputParser;
-addParameter(p,'filename',default_filename,@(x) isstring(x));
+addParameter(p,'filename',default_filename,@(x) isstring(x) || ischar(x));
 addParameter(p,'pband',default_pband,@(x) numel(x)==2);
 addParameter(p,'ptCut',default_ptCut,validScalarNum);
 addParameter(p,'ttv',default_ttv,validScalarNum);
