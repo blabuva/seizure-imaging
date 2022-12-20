@@ -23,3 +23,5 @@ for si = 1:numel(curated_seizures)
     end
 end
 
+% save(fullfile(fp,'firstTroughTimes.mat'),...
+% "firstTroughTimes");                                % save firstTroughTimes in the folder where the RHD files are
