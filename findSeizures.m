@@ -14,13 +14,14 @@ function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, target
 %   Name: 'targetFS'     Value: target sampling frequency. Used to downsample data to
 %                               reduce computational load (default = 200)
 %   Name: 'plotFlag'     Value: 0 or 1 for no plot or plotting options, respectively (default = 1)
+%   Name: 'tb'           Value: time buffer (in seconds) before and after seizures to grab  (default = 2)
 %   %------------------------------------------------------------%
 %
 % OUTPUTS:
 %   seizures - structure containing information about detected seizures
 %
 % Written by Scott Kilianski
-% Updated 12/14/2022
+% Updated 1/10/2023
 
 %% Parse inputs
 validScalarNum = @(x) isnumeric(x) && isscalar(x);
@@ -31,6 +32,7 @@ default_ttv = 3;
 default_eegChannel = 1;
 default_targetFS = 200;
 default_plotFlag = 1;
+default_tb = 2; % time buffer (in seconds) - time to grab before and after each detected seizure
 p = inputParser;
 addParameter(p,'filename',default_filename,@(x) isstring(x) || ischar(x));
 addParameter(p,'pband',default_pband,@(x) numel(x)==2);
@@ -39,6 +41,7 @@ addParameter(p,'ttv',default_ttv,validScalarNum);
 addParameter(p,'eegChannel',default_eegChannel,validScalarNum);
 addParameter(p,'targetFS',default_targetFS);
 addParameter(p,'plotFlag',default_plotFlag);
+addParameter(p,'tb',default_tb);
 parse(p,varargin{:});
 filename = p.Results.filename;
 pband = p.Results.pband;
@@ -47,8 +50,9 @@ ttv = p.Results.ttv;
 eegChannel = p.Results.eegChannel;
 targetFS = p.Results.targetFS;
 plotFlag = p.Results.plotFlag;
-detectionParameters(1,:) = {'pband','ptCut','ttv','eegChannel','targetFS'};
-detectionParameters(2,:) = {pband,ptCut,ttv,eegChannel,targetFS};
+tb = p.Results.tb;
+detectionParameters(1,:) = {'pband','ptCut','ttv','eegChannel'};
+detectionParameters(2,:) = {pband,ptCut,ttv,eegChannel};
 
 %% Load in data
 if isempty(filename)
@@ -69,7 +73,7 @@ elseif strcmp(fext,'.mat')
 else
     error('File type unrecognized. Use .rhd, .adicht, .mat file types only');
 end
-
+detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
 frange = [0 50];                                            % frequency range used for spectrogram
 [spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*100],...
@@ -85,11 +89,11 @@ fallI = find(diff(bands.broadLow>tVal)<0) + 1;  % seizure falling edge index
 pzit = 2; % gap length under which to merge (seconds)
 mszt = .5; % minimum seizure time duration (seconds)
 ttv = -std(EEG.data)*ttv; % calculate trough threshold value (standard deviation * user-defined multiplier)
-tb = 2; % time buffer (in seconds) - time to grab before and after each detected seizure
+
 %-------------------------------------------------------------------------%
 % INCLUDE BIT HERE TO CHECK IF CODE IS TRYING TO GRAB TIME OUTSIDE OF ACTUAL DATA (BECAUSE OF TIME BUFFER AROUND PUTATIVE SEIZURES)
-% INCLUDE BIT HERE TO REMOVE UNMATCHED RISES AND FALLS
 %-------------------------------------------------------------------------%
+
 if fallI(1) < riseI(1)
     fallI(1) = [];
 end

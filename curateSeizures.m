@@ -4,10 +4,10 @@ function seizures = curateSeizures(seizures)
 % INPUTS:
 %   seizures - structure containing information about detected seizures
 % OUTPUTS:
-%   seizures - description of out1
+%   seizures - description of seizures
 %
 % Written by Scott Kilianski
-% Updated 11/1/2022
+% Updated 1/10/2023
 
 %% Body of function here
 % Plotting code below
@@ -34,6 +34,7 @@ while ~isequal(key,'return')
     if (loopdir==1 && ki<length(seizures)) || (loopdir==-1 && ki>1) % check to ensure ki doesn't go beyond seizures limits
         ki = ki + loopdir;
     end
+    
 end
 close(szFig);
 seizures(strcmp({seizures.type},'remove')) = []; % removes seizures tagged for removal
