@@ -5,11 +5,16 @@ EEG = adiLoadEEG(filename,2,20000);
 x = EEG.data>3; % generating TTL trace
 rte = diff(x)>0; %rising TTL edges
 z = diff(x)<0; %falling TTL edges
-yi = find(rte); % indices of rising edges
-zi = find(z); % indices of falling edges
+yi = find(rte)+1; % indices of rising edges
+zi = find(z)+1; % indices of falling edges
 figure;
-histogram(zi-yi); % histogram of difference between rising and falling (estimate of exposure time)
-histogram(diff(yi)); % histogram of intervals between rising edges (inter-frame interval)
+subplot(211);
+histogram((zi-yi)/EEG.finalFS*1000); % histogram of difference between rising and falling (estimate of exposure time)
+title('Time (in ms) between rising and falling edges (exposure time)');
+subplot(212);
+histogram(diff(yi)/EEG.finalFS*1000); % histogram of intervals between rising edges (inter-frame interval)
+title('Time (in ms) between rising edges (inter-frame interval)')
+xlabel('Time (milliseconds)')
 
 %%
 [fn,fp] = uigetfile('*.dcimg');
@@ -26,5 +31,21 @@ else
     fprintf('No dropped frames! Woohoooo!\n');
 end
 
+%% Account for dropped frames
 fprintf('Assigning times to frames...\n');
 fprintf('Frames are now accurately timestamped.\n')
+
+
+figure;
+k = 0;   %frame index
+hdcimg = dcimgmex('open',dcimg_filename);                     % open the original .dcimg file
+imgData = dcimgmex('readframe', hdcimg, k)';% read in 1st frame (0-indexed)
+colormap(hot);
+imaxes = axes;  %image axes
+im = imagesc(flipud(imgData));
+imaxes.Title.String = sprintf('Frame %d',k);
+%% 
+imgData = dcimgmex('readnext', hdcimg)';% read in next frame
+k = k + 1;
+im.CData = flipud(imgData);
+imaxes.Title.String = sprintf('Frame %d',k);

@@ -14,7 +14,7 @@ function EEG = adiLoadEEG(filename,eegChannel,targetFS)
 %       samples/second)
 %
 % Written by Scott Kilianski 
-% 10/10/2022
+% Updated 1/11/2023
 
 %% Set defaults as needed if not user-specific by inputs
 if ~exist('eegChannel','var')
@@ -34,7 +34,7 @@ EEGdata = ad.getChannelData(eegChannel,1); % extract raw data
 EEGdata = EEGdata(1:dsFactor:end); % downsample raw data
 EEGtime = (0:dsFactor:ad.channel_specs(eegChannel).n_samples-1)'...
     *ad.channel_specs(eegChannel).dt; % create corresponding time vector
-
+EEGtime = EEGtime + ad.records.trigger_minus_rec_start;   % account for pre-trigger recording ('negative time')
 %% Create output structure and assign values to fields
 EEG = struct('data',EEGdata,...
     'time',EEGtime,...

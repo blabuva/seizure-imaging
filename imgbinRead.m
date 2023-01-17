@@ -14,6 +14,6 @@ finID = fopen(filename,'r');    % open .imgbin file for reading
 imgDims = fread(finID,3,'int32','l'); % imgDims(1) is number of frames. (2) is height. (3) is width
 fclose(finID);              % close .imgbin file
 img = memmapfile(filename,'Offset',12,...
-'Format',{'uint16',[imgDims(2),imgDims(3),imgDims(1)],'frames'}); % read in data by memory map method
+'Format',{'uint16',[imgDims(3),imgDims(2),imgDims(1)],'frames'}); % read in data by memory map method
 
 end %function end
