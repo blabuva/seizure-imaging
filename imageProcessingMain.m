@@ -1,0 +1,33 @@
+%%
+[fn,fp] = uigetfile('*.imgbin'); % UI to select .imgbin file
+filename = fullfile(fp,fn);     % append to make full file path
+img = imgbinRead(filename);     % read in the imaging data
+nm470 = img.Data.frames(:,:,1:2:end);
+
+
+%%
+diffImage = double(nm470) - mean(nm470,3);
+diffZero = max(diffImage,0);
+divImage = (diffZero ./ mean(nm470,3));
+finalMin = min(divImage(:));
+finalMax = max(divImage(:));
+
+%%
+figure;
+imgax = axes;
+frameN = 2;
+x = imagesc(flipud(divImage(:,:,frameN)));
+imgax.CLim = [finalMin finalMax];
+imgax.CLim = [0 .15];
+imgax.Colormap = colormap(gray);
+fhShape = drawfreehand;
+msk = fhShape.createMask();
+%%
+frameN = frameN + 1;
+
+% bulk_dfTrace = squeeze(sum(divImage.*msk,[1 2]));
+x.CData = flipud(divImage(:,:,frameN)).*msk;
+imgax.Title.String = sprintf('Frame %d',frameN);
+
+%%
+fhShape = drawfreehand;
