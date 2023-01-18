@@ -1,7 +1,10 @@
 %% Dropped frame check
-[fn, fp] = uigetfile('*.adicht');
-filename = [fp,fn];
-EEG = adiLoadEEG(filename,2,20000);
+% [fn, fp] = uigetfile('*.adicht');
+fp = uigetdir;
+dList = dir(fp);
+fn = dList(contains({dList.name},'.adicht')).name;
+eeg_filename = fullfile(fp,fn);
+EEG = adiLoadEEG(eeg_filename,2,20000);
 x = EEG.data>3; % generating TTL trace
 rte = diff(x)>0; %rising TTL edges
 z = diff(x)<0; %falling TTL edges
@@ -17,8 +20,9 @@ title('Time (in ms) between rising edges (inter-frame interval)')
 xlabel('Time (milliseconds)')
 
 %%
-[fn,fp] = uigetfile('*.dcimg');
-dcimg_filename = [fp,fn];
+% [fn,fp] = uigetfile('*.dcimg');
+fn = dList(contains({dList.name},'.dcimg')).name;
+dcimg_filename = fullfile(fp,fn);
 hdcimg = dcimgmex('open',dcimg_filename);                     % open the original .dcimg file
 nof = dcimgmex('getparam',hdcimg,'NUMBEROF_FRAME');     % retrieve the total number of frames in the session
 dcimgmex('close',hdcimg);
@@ -32,20 +36,5 @@ else
 end
 
 %% Account for dropped frames
-fprintf('Assigning times to frames...\n');
-fprintf('Frames are now accurately timestamped.\n')
-
-
-figure;
-k = 0;   %frame index
-hdcimg = dcimgmex('open',dcimg_filename);                     % open the original .dcimg file
-imgData = dcimgmex('readframe', hdcimg, k)';% read in 1st frame (0-indexed)
-colormap(hot);
-imaxes = axes;  %image axes
-im = imagesc(flipud(imgData));
-imaxes.Title.String = sprintf('Frame %d',k);
-%% 
-imgData = dcimgmex('readnext', hdcimg)';% read in next frame
-k = k + 1;
-im.CData = flipud(imgData);
-imaxes.Title.String = sprintf('Frame %d',k);
+% fprintf('Assigning times to frames...\n');
+% fprintf('Frames are now accurately timestamped.\n')
