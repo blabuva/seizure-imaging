@@ -1,6 +1,7 @@
 %%
-vfn = 'C:\Users\Scott\Desktop\testVid.avi';
+vfn = '/home/scott/Desktop/SI_014_20230213.avi';
 writerObj  = VideoWriter(vfn);
+open(writerObj);
 [fn, fp] = uigetfile('*.adicht');
 filename = [fp,fn];
 ttl = adiLoadEEG(filename,2,20000);
@@ -12,8 +13,7 @@ yi = find(rte); % indices of rising edges
 EEG = adiLoadEEG(filename,1,20000);
 frameTimes = EEG.time(yi);
 vidFS = round([numel(frameTimes)/(frameTimes(end)-frameTimes(1))]/2); %video sampling frequency
-writerObj.FrameRate = vidFS;
-open(writerObj);
+writerObj.FrameRate = 30;
 windowSize = 10; %seconds
 halfWin = windowSize/2*EEG.finalFS;
 
@@ -21,8 +21,6 @@ halfWin = windowSize/2*EEG.finalFS;
 ecog_imag_fig = figure;
 ecogax = subplot(10,1,1:2);
 imgax = subplot(10,1,4:10);
-grid; % turn grid on for
-
 
 %% Initialize ECoG plot and show first window
 imk = 0;    % frame index (0-indexed)
@@ -38,7 +36,10 @@ ecogax.YLabel.String = 'Voltage';
 grid on
 %%
 dList = dir(fp);
-fn = dList(contains({dList.name},'.dcimg')).name;
+[~, filen] = fileparts(filename);
+usInd = regexp(filen,'_');
+subjName = filen(1:usInd(2)-1);
+fn = dList(contains({dList.name},'.dcimg') & contains({dList.name},subjName)).name;
 dcimg_filename = fullfile(fp,fn);
 hdcimg = dcimgmex('open',dcimg_filename);                     % open the original .dcimg file
 nof = dcimgmex('getparam',hdcimg,'NUMBEROF_FRAME');     % retrieve the total number of frames in the session
@@ -54,7 +55,7 @@ hold on
 timetxt = text(260,25,sprintf('%.2f',frameTimes(eck)),'Color','w','FontSize',18);
 hold off
 set(gcf().Children,'FontSize',20);
-set(imgax,'CLim',[500 1500])
+set(imgax,'CLim',[50 10000])
 set(ecogax,'YLim',[-10 10],'XLim',[-windowSize/2 windowSize/2]);
 colorbar;
 set(ecog_imag_fig,'Position',[400 50 950 900],'Visible','off');
@@ -63,8 +64,8 @@ F = getframe(ecog_imag_fig);
 writeVideo(writerObj, F);
 %% Update Plots
 writeClock = tic;
-while (imk+1) < 5000
-    fprintf('Frame %d out of %d - %.2f minutes total\n',imk,nof,toc(writeClock)/60);
+while (imk+1) < nof
+    fprintf('Frame %d out of %d - %.2f\n',imk,nof,toc(writeClock)/60);
     imk = imk + 2;
     eck = imk+1;
     wi = yi(eck)-halfWin:yi(eck)+halfWin;
@@ -79,5 +80,5 @@ end
 close(writerObj);
 
 %%
-dcimgmex('close',hdcimg);
+% dcimgmex('close',hdcimg);
 
