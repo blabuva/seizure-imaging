@@ -1,5 +1,5 @@
 function img = imgbinRead(filename)
-%% imgbinRead Maps data in .imgbin file using memmapfile
+%% imgbinRead Maps data in .imgbin file using memory map method (necessary for huge data files)
 % 
 % INPUTS:
 %   filename - full path to .imgbin file
@@ -10,9 +10,11 @@ function img = imgbinRead(filename)
 % 10/18/2022
 
 %% Read in "header" (# of frames, height, width). Then memmap image data
-finID = fopen(filename,'r');    % open .imgbin file for reading
-imgDims = fread(finID,3,'int32','l'); % imgDims(1) is number of frames. (2) is height. (3) is width
-fclose(finID);              % close .imgbin file
+finID = fopen(filename,'r');            % open .imgbin file for reading
+imgDims = fread(finID,3,'int32','l');   % Readining in header - imgDims(1) is number of frames. (2) is height. (3) is width
+fclose(finID);                          % close .imgbin file
+
+%% Memory map the data
 img = memmapfile(filename,'Offset',12,...
 'Format',{'uint16',[imgDims(3),imgDims(2),imgDims(1)],'frames'}); % read in data by memory map method
 
