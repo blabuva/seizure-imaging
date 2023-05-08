@@ -1,0 +1,46 @@
+function [fitted_y] = expDecayFit(x,y,plotFlag)
+%% expDecayFit Fits an exponential decay function to supplied data vector
+%
+% INPUTS:
+%   x - xData (often a time vector)
+%   y - yData, same length as x
+%   plotFlag - 0 or 1 for plotting the data and the exponential curve
+%
+% OUTPUTS:
+%   fitted_y - y data returned from the the best fit function (same length as 'y' input )
+%
+% Written by Scott Kilianski
+% Updated 3/17/2023
+
+%% 
+if ~exist('plotFlag','var')
+    plotFlag = 0;
+end
+% Define the exponential decay function
+exponential_decay = @(x, a, b, c) a * exp(-b * x) + c;
+
+% Define an anonymous function that computes the sum of squared errors
+sum_of_squared_errors = @(parameters) sum((exponential_decay(x, parameters(1), parameters(2), parameters(3)) - y).^2);
+
+% Use fminsearch to minimize the sum of squared errors
+initial_guess = [10, 10, 10];
+options = optimset('MaxIter', 1000, 'MaxFunEvals', 100000);
+parameters = fminsearch(sum_of_squared_errors, initial_guess, options);
+
+% Extract the individual parameters from the parameter vector
+a = parameters(1);
+b = parameters(2);
+c = parameters(3);
+
+fitted_y = exponential_decay(x, a, b, c);
+
+if plotFlag
+    figure;
+    hold on
+    p(1) = plot(x, y, 'ko', 'MarkerFaceColor','k','MarkerSize',1);
+    p(2) = plot(x, fitted_y, 'r-','LineWidth',2);
+    legend('Data', 'Fitted function')
+    hold off
+end
+
+end % function end

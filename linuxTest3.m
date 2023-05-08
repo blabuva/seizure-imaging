@@ -1,14 +1,14 @@
-fprintf('linuxTest2 started\n')
+fprintf('linuxTest3 started\n')
 %% Load Camera TTLs
 fprintf('Loading camera output TTLs...\n');
-load('/media/scottX/SI_Project/20230223/SI_016_20230223_2_ttl.mat','ttl');
+load('/media/scottX/SI_Project/20230213/SI_014_20230213_2_ttl.mat','ttl');
 x = ttl.data>3;     % generating TTL trace
 rte = diff(x)>0;    % rising TTL edges
 yi = find(rte);     % indices of rising edges
 
 %% Load EEG Data
 fprintf('Loading EEG data...\n');
-load('/media/scottX/SI_Project/20230223/SI_016_20230223_2_EEG.mat','EEG');
+load('/media/scottX/SI_Project/20230213/SI_014_20230213_2_EEG.mat','EEG');
 frameTimes = EEG.time(yi);          % get the frame times (time when there is a rising TTL edge from the camera)
 frameTimes = frameTimes(1:2:end);   % get every other frame time (corresponds to only blue LED illumation)
 windowSize = 10;                    % time window to display ECoG data (in seconds units)
@@ -34,20 +34,22 @@ ecogax.Title.String = 'ECoG';
 ecogax.YLabel.String = 'Volts';
 grid on
 
-%% Image loading and transforming
+%% Image loading imaging data
 fprintf('Loading and processing image series...\n');
-img = imgbinRead('/media/scottX/SI_Project/20230223/SI_016_2023022300001.imgbin');     % read in the imaging data
-nm470 = img.Data.frames(:,:,800:2:end-1);   % REMOVE FIRST 400 FRAMES and grab every other BLUE frame (470nm illumination only)
-nm470 = flip(nm470,1);                  %% ONLY FLIP IF NEEDED. CAMERA IS 'INVERTED' AS OF 2-22-2023 BUT THIS COULD CHANGE %%
-nm380 = img.Data.frames(:,:,801:2:end);   % Grab every other VIOLET frame (380nm illumination only)
-nm380 = flip(nm380,1);
-bminusv = nm470 - nm380;                   %subtract violet frames from blue frames
+img = imgbinRead('/media/scottX/SI_Project/20230213/SI_014_20230213_00001.imgbin');     % read in the imaging data
+zsz = size(img.Data.frames,3);
+% rrange = 141:470;
+% xsz = numel(rrange);
+% crange = 150:429;
+% ysz = numel(crange);
+% frange = 1:2:zsz;
+% zsz = numel(frange);
 
 %% Initialize imaging plot and show first frame
 axes(imgax);
 imgax.Colormap = colormap(gray);
-baseFrame = 2; % PLOT 2ND FRAME BECAUSE 1ST IS OFTEN NON-REPRESENTATIVE
-baseImage = image(nm470(:,:,baseFrame),'CDataMapping','scaled');    % plot baseline image for anatomical reference
+baseFrame = 1; % PLOT 2ND FRAME BECAUSE 1ST IS OFTEN NON-REPRESENTATIVE
+baseImage = image(img.Data.frames(:,:,baseFrame),'CDataMapping','scaled');    % plot baseline image for anatomical reference
 set(imgax, 'box','off','XTickLabel',[],'XTick',[],...
     'YTickLabel',[],'YTick',[]);                                    % remove boxes and ticks
 imgax.Title.String = 'Imaging Frames';
@@ -77,9 +79,16 @@ dfMax = .25;                                                 % maximum absolute 
 
 %% Draw mask and apply to image matrix
 fprintf('Waiting for user to draw contour around imaging area...\n');
-fhShape = drawfreehand;                 % draw shape
+fhShape = drawassisted;                 % draw shape
 fprintf('User is finished drawing\n');
 msk = fhShape.createMask;               % create mask from shape
+crange = find(sum(msk,1),1,'first'):find(sum(msk,1),1,'last');
+rrange = find(sum(msk,2),1,'first'):find(sum(msk,2),1,'last');
+ysz = numel(rrange);
+xsz = numel(crange);
+zsz = ;
+msk2 = msk(rrange,crange);
+trace = reshape(img.Data.frames(rrange,crange,frange), xsz*ysz,zsz)'; % linearize pixels
 
 %% calculate bulk fluorescence vector and %%%%%%% plot fluorescence trace %%%%%%%
 fprintf('Calculating bulk fluorecence signal over time...\n');

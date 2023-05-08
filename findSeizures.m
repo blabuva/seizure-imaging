@@ -56,7 +56,7 @@ detectionParameters(2,:) = {pband,ptCut,ttv,eegChannel};
 
 %% Load in data
 if isempty(filename)
-    [fn,fp,rv] = uigetfile({'*.mat;*.adicht;*.rhd'});
+    [fn,fp,rv] = uigetfile({'*.abf;*.mat;*.adicht;*.rhd'});
     if ~rv % if no file selected, end function early
         return
     else
@@ -70,6 +70,8 @@ elseif strcmp(fext,'.rhd')
     EEG = intanLoadEEG(filename,eegChannel,targetFS);   % loads .rhd files
 elseif strcmp(fext,'.mat')
     EEG = matLoadEEG(filename,eegChannel,targetFS);     % loads .mat files that were exported from LabChart
+elseif strcmp(fext,'.abf')
+    EEG = abfLoadEEG(filename,eegChannel,targetFS);     % loads .abf files
 else
     error('File type unrecognized. Use .rhd, .adicht, .mat file types only');
 end
@@ -77,7 +79,7 @@ detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
 frange = [0 50];                                            % frequency range used for spectrogram
 [spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*100],...
-    'window',1,'overlap',0.75,'range',frange);              % computes the spectrogram
+    'window',1,'overlap',0.5,'range',frange);              % computes the spectrogram
 bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
@@ -109,7 +111,7 @@ startEnd_interp(tooShortLog,:) = []; % remove seizures that are too short
 ts = cell2mat(arrayfun(@(x) find(x==EEG.time), ...
     startEnd_interp,...
     'UniformOutput',0)); % getting start and end indices
-outfn = sprintf('%s%sseizures.mat',fp,'\'); % name of the output file
+outfn = sprintf('%s%s%s_seizures.mat',fp,'\',fn); % name of the output file
 
 %-------------------------------------------------------------------------%
 %quick check to get the correct 'findpeaks' function because the chronux
@@ -138,35 +140,36 @@ end
 
 %% Plotting trace, thresholds, and identified putative seizures
 if plotFlag % plotting option
-figure; ax(1) = subplot(311);
-plot(EEG.time, EEG.data,'k','LineWidth',2); title('EEG');
-hold on
-plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
-ax(2) = subplot(312);
-plot(t,bands.broadLow,'k','linewidth',2); 
-title(sprintf('Power in %d-%dHz Range',pband(1),pband(2)));
-hold on
-plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
-ax(3) = subplot(313);
-cutoffs = [3 8];
-PlotColorMap(log(spectrogram),1,'x',t,'y',f,'cutoffs',cutoffs);
-title('Spectrogram'); xlabel('Time (sec)'); ylabel('Frequency (Hz)');
-linkaxes(ax,'x');
-axes(ax(1)); hold on;
-yl = get(gca,'YLim');
-for ii = 1:size(startEnd_interp,1)
-    patch([startEnd_interp(ii,:),fliplr(startEnd_interp(ii,:))],...
-        [yl(1),yl(1),yl(2),yl(2)],'g',...
-        'EdgeColor','none','FaceAlpha',0.25);
-end
+    figure; ax(1) = subplot(311);
+    plot(EEG.time, EEG.data,'k','LineWidth',2); title('EEG');
+    hold on
+    plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
+    ax(2) = subplot(312);
+    plot(t,bands.broadLow,'k','linewidth',2);
+    title(sprintf('Power in %d-%dHz Range',pband(1),pband(2)));
+    hold on
+    plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
+    ax(3) = subplot(313);
+    cutoffs = [3 8];
+    PlotColorMap(log(spectrogram),1,'x',t,'y',f,'cutoffs',cutoffs);
+    title('Spectrogram'); xlabel('Time (sec)'); ylabel('Frequency (Hz)');
+    linkaxes(ax,'x');
+    axes(ax(1)); hold on;
+    yl = get(gca,'YLim');
+    xlim([EEG.time(1) EEG.time(end)])
+    for ii = 1:size(startEnd_interp,1)
+        patch([startEnd_interp(ii,:),fliplr(startEnd_interp(ii,:))],...
+            [yl(1),yl(1),yl(2),yl(2)],'g',...
+            'EdgeColor','none','FaceAlpha',0.25);
+    end
 end % plotting option end
 
-
+[fp, fn, fext] = fileparts(outfn);
 try % try statement here because sometimes saving fails due to insufficient permissions
     save(outfn,'seizures'); % save output into same folder as filename
-    fprintf('seizures.mat saved in %s\n',fileparts(outfn))
+    fprintf('%s%s saved in %s\n',fn,fext,fp)
 catch
-    fprintf('seizures.mat could not be saved in %s, likely because of insufficient permissions\n',fileparts(outfn))
+    fprintf('%s%s could not be saved in %s, likely because of insufficient permissions\n',fn,fext,fp)
 end
 
 end %main function end

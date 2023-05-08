@@ -41,7 +41,7 @@ nm470 = img.Data.frames(:,:,800:2:end-1);   % REMOVE FIRST 400 FRAMES and grab e
 nm470 = flip(nm470,1);                  %% ONLY FLIP IF NEEDED. CAMERA IS 'INVERTED' AS OF 2-22-2023 BUT THIS COULD CHANGE %%
 nm380 = img.Data.frames(:,:,801:2:end);   % Grab every other VIOLET frame (380nm illumination only)
 nm380 = flip(nm380,1);
-bminusv = nm470 - nm380;                   %subtract violet frames from blue frames
+bminusv = nm470 - nm380;
 
 %% Initialize imaging plot and show first frame
 axes(imgax);

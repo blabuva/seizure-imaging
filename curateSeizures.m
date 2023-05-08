@@ -12,9 +12,9 @@ function seizures = curateSeizures(seizures)
 %% Body of function here
 % Plotting code below
 szFig = figure; ax = axes;
-yl = [-15 15]; % NEED BETTER YLIMIT STRATEGY
-set(ax,'YLim',yl);
+yl = [-10 10]; % BETTER YLIMIT STRATEGY WOULD BE NICE
 p = plot(0,0,'k','LineWidth',1.5); % initialize line plot for EEG
+set(ax,'YLim',yl);
 hold on
 sc = scatter([],[],108,'ob','lineWidth',2.5); % initialize scatter for troughs
 ki = 1; %intialize looping index for use below
@@ -38,7 +38,10 @@ while ~isequal(key,'return')
 end
 close(szFig);
 seizures(strcmp({seizures.type},'remove')) = []; % removes seizures tagged for removal
-% save([seizures(1).filename '_curated'],'seizures'); % update the saved file
+[fp, fn, fext] = fileparts(seizures(1).filename);
+dtime = string(datetime('now','Format','yyyyMMdd_HH_mm_ss'));
+saveName = sprintf('%s%s%s%s%s.mat',fp,'\',fn,'_curated_',dtime);
+save(saveName,'seizures'); % update the saved file
 
 end %function end
 
@@ -46,7 +49,7 @@ end %function end
 function [csz, loopdir, key] = getuInput(csz,ki,ax,sc)
 csz.type = csz.type;
 loopdir = 0;
-while ~loopdir % do I need abs()???
+while ~loopdir 
     bb = waitforbuttonpress; % wait for click or keyboard button
     if bb % if a keyboard button is pressed
         key= get(gcf,'CurrentKey');
