@@ -14,27 +14,16 @@ function EEG = matLoadEEG(filename,eegChannel,targetFS)
 %       finalFS - the sampling frequency ultimately used (in
 %       samples/second)
 %
-% Written by Scott Kilianski 
-% 11/3/2022
+% Written by Scott Kilianski
+% Updated 5/26/2023
 
 %% Set defaults as needed if not user-specific by inputs
 if ~exist('eegChannel','var')
     eegChannel = 1; %default
 end
-if ~exist('targetFS','var') 
-   targetFS = 200; %default
+if ~exist('targetFS','var')
+    targetFS = 200; %default
 end
-
-%%
-fp = fileparts(filename);
-fDir = dir(fp);
-tdLog = strcmp({fDir.name},'timeData.mat'); % 
-if isempty(tdLog)
-    error(['No timeData.mat file found in this folder....' ...
-        'Please create this file and run again.'])
-end
-tdName = fullfile(fp,fDir(tdLog).name);     %
-load(tdName,'recStart','tv');               % load in time vector ('tv') and start of recording time
 
 %% Load raw data from .mat and resample
 funClock = tic;     % function clock
@@ -48,15 +37,30 @@ if samplerate < targetFS
 end
 timeVec = ((1:length(data))-1)/samplerate(eegChannel);  % create time vector
 dsFactor = floor(samplerate(eegChannel) / targetFS);    % downsampling factor to achieve targetFS
-finalFS = samplerate(eegChannel) / dsFactor;            % calculate ultimate sampling frequency to be used 
+finalFS = samplerate(eegChannel) / dsFactor;            % calculate ultimate sampling frequency to be used
 EEGdata = data(eegChannel,1:dsFactor:end)';             % subsample raw data
 EEGtime = timeVec(1:dsFactor:end)';                      % subsample the time vector at dsFactor
-EEGtime = double(tv(1:dsFactor:end));
 
 %% Create output structure and assign values to fields
 EEG = struct('data',EEGdata,...
     'time',EEGtime,...
     'finalFS',finalFS);
+
+%%
+fp = fileparts(filename);
+fDir = dir(fp);
+tdLog = strcmp({fDir.name},'timeData.mat'); %
+if isempty(tdLog)
+    warning(['No timeData.mat file found in this folder....' ...
+        'Please create this file and run again if ' ...
+        'you want Date-Time style plotting.'])
+else
+    tdName = fullfile(fp,fDir(tdLog).name);     %
+    load(tdName,'recStart','tv');               % load in time vector ('tv') and start of recording time
+    EEG.recStart = recStart;
+    EEG.tv = double(tv(1:dsFactor:end));
+end
+
 fprintf('Loading data took %.2f seconds\n',toc(funClock));
 
 end % function end

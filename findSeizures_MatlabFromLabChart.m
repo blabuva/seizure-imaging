@@ -1,4 +1,4 @@
-function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, targetFS)
+function seizures = findSeizures_MatlabFromLabChart(varargin)%pband, ptCut, ttv, eegChannel, targetFS)
 %% findSeizures Finds seizures in an EEG/LFP traces based on power thresholding
 %
 % INPUTS:
@@ -22,10 +22,11 @@ function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, target
 %
 % Written by Scott Kilianski
 % Updated 5/26/2023
+
+%-------------------------------------------------------------------------%
 %% Quick check to get the correct 'findpeaks' function because the chronux
 % toolbox function of the same name sometimes shadows the MATLAB signal
 % processing toolobox version (i.e. the version we actually want)
-%-------------------------------------------------------------------------%
 fpList = which('findpeaks.m','-all'); % find all 'findpeaks.m'
 fpInd = find(contains(fpList,[filesep 'toolbox' filesep 'signal' filesep 'signal' filesep 'findpeaks.m']),1,'first'); %get location of the correct 'findpeaks.m'
 currdir = cd; % save current directory path
@@ -65,6 +66,7 @@ tb = p.Results.tb;
 detectionParameters(1,:) = {'pband','ptCut','ttv','eegChannel'};
 detectionParameters(2,:) = {pband,ptCut,ttv,eegChannel};
 
+%-------------------------------------------------------------------------%
 %% Load in data
 if isempty(filename)
     [fn,fp,rv] = uigetfile({'*.abf;*.mat;*.adicht;*.rhd'});
@@ -74,23 +76,19 @@ if isempty(filename)
         filename = fullfile(fp,fn);
     end
 end
-[fp, fn, fext] = fileparts(filename);           % get file name, path, and extension
-if strcmp(fext,'.adicht')
-    EEG = adiLoadEEG(filename,eegChannel,targetFS);     % loads .adicht files
-elseif strcmp(fext,'.rhd')
-    EEG = intanLoadEEG(filename,eegChannel,targetFS);   % loads .rhd files
-elseif strcmp(fext,'.mat')
+[fp, fn, fext] = fileparts(filename);                   % get file name, path, and extension
+if strcmp(fext,'.mat')
     EEG = matLoadEEG(filename,eegChannel,targetFS);     % loads .mat files that were exported from LabChart
-elseif strcmp(fext,'.abf')
-    EEG = abfLoadEEG(filename,eegChannel,targetFS);     % loads .abf files
 else
     error('File type unrecognized. Use .rhd, .adicht, .mat file types only');
 end
 detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
+
+%-------------------------------------------------------------------------%
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
 frange = [0 50];                                            % frequency range used for spectrogram
 [spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*0.01],...
-    'window',1,'overlap',0.5,'range',frange,'show','on');              % computes the spectrogram
+    'window',1,'overlap',0.5,'range',frange);              % computes the spectrogram
 bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
@@ -98,6 +96,7 @@ tVal = prctile(bands.broadLow, ptCut);          % find the bandpower threshold v
 riseI = find(diff(bands.broadLow>tVal)>0) + 1;  % seizure rising edge index
 fallI = find(diff(bands.broadLow>tVal)<0) + 1;  % seizure falling edge index
 
+%-------------------------------------------------------------------------%
 %% Find putative seizures, merge those that happen close in time, detect troughs, and store everything in structure(sz)
 pzit = 2; % gap length under which to merge (seconds)
 mszt = .5; % minimum seizure time duration (seconds)
@@ -124,9 +123,16 @@ ts = cell2mat(arrayfun(@(x) find(x==EEG.time), ...
     'UniformOutput',0)); % getting start and end indices
 outfn = sprintf('%s%s%s_seizures.mat',fp,'\',fn); % name of the output file
 
+%-------Check if date times are available-----------%
+if isfield(EEG,'tv') && isfield(EEG,'recStart')
+    DTtime = EEG.recStart + seconds(EEG.tv);
+end
+%---------------------------------------------------%
+
 for ii = 1:size(ts,1)
     eegInd = ts(ii,1):ts(ii,2);
     seizures(ii).time = EEG.time(eegInd); % find EEG.time-referenced.
+    seizures(ii).DTtime = DTtime(eegInd);
     seizures(ii).EEG = EEG.data(eegInd);
     seizures(ii).type = 'Unclassified';
     [trgh, locs] = fpFun(-seizures(ii).EEG); % find troughs (negative peaks)
@@ -137,10 +143,18 @@ for ii = 1:size(ts,1)
     seizures(ii).parameters = detectionParameters;
 end
 
+%-------------------------------------------------------------------------%
 %% Plotting trace, thresholds, and identified putative seizures
 if plotFlag % plotting option
     figure; ax(1) = subplot(311);
-    plot(EEG.time, EEG.data,'k','LineWidth',2); title('EEG');
+    if isfield(EEG,'tv') && isfield(EEG,'recStart')
+        nearestTime = interp1(EEG.time,EEG.time,t,'nearest','extrap');
+        [~,Tidx] = ismember(nearestTime,EEG.time);
+        t = EEG.recStart + seconds(EEG.tv(Tidx));
+        plot(DTtime, EEG.data,'k','LineWidth',2); title('EEG');
+    else
+        plot(EEG.time, EEG.data,'k','LineWidth',2); title('EEG');
+    end
     hold on
     plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
     ax(2) = subplot(312);
@@ -150,16 +164,26 @@ if plotFlag % plotting option
     plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
     ax(3) = subplot(313);
     cutoffs = [3 8];
-    PlotColorMap(log(spectrogram),1,'x',t,'y',f,'cutoffs',cutoffs);
+    %         pcolor(datenum(xData), yData, matrix);
+    %         cplot = pcolor(t,f,spectrogram);
+    cplot = pcolor(t,f,log(spectrogram));
+    clim(cutoffs);
+    set(cplot,'EdgeColor','none');
+    colormap(jet)
+    %         PlotColorMap(log(spectrogram),1,'x',t,'y',f,'cutoffs',cutoffs);
     title('Spectrogram'); xlabel('Time (sec)'); ylabel('Frequency (Hz)');
+    title('Spectrogram'); xlabel('Time'); ylabel('Frequency (Hz)');
     linkaxes(ax,'x');
     axes(ax(1)); hold on;
-    yl = get(gca,'YLim');
-    xlim([EEG.time(1) EEG.time(end)])
-    for ii = 1:size(startEnd_interp,1)
-        patch([startEnd_interp(ii,:),fliplr(startEnd_interp(ii,:))],...
-            [yl(1),yl(1),yl(2),yl(2)],'g',...
-            'EdgeColor','none','FaceAlpha',0.25);
+    xlim('tight');
+    drawnow;
+    yP = [min(EEG.data), max(EEG.data), max(EEG.data), min(EEG.data)];
+    for ii = 1:numel(seizures)
+        xP = [seizures(ii).DTtime(1), seizures(ii).DTtime(1), ...   % seizure start time
+            seizures(ii).DTtime(end), seizures(ii).DTtime(end)];    % end time
+        a = area(xP,yP,'basevalue',min(EEG.data),...
+            'FaceColor','g','EdgeColor','none','FaceAlpha',0.25);
+        a.BaseLine.Visible = 'off';
     end
 end % plotting option end
 
