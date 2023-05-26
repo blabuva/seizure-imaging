@@ -13,11 +13,23 @@ EEG.finalFS = 1/(dsFactor*dt);
 EEG.time = 0:dt:endTime;
 EEG.time = EEG.time(dsInd);
 EEG.data = d(dsInd,1);
+Fs = EEG.finalFS; % Sampling rate in Hz
+
+%%
+Fc = 0.0005; % Lower cutoff frequency in Hz
+% Set filter coefficients for a Butterworth filter
+[b, a] = butter(2, Fc/(Fs/2), 'low');
+% Apply the filter using filtfilt
+filtered_trace_low = filtfilt(b, a, EEG.data);
+
+figure;
+plot(EEG.time,EEG.data-filtered_trace_low);
+
+
 %%
 % Load the trace data into a vector, e.g. using the "load" command
 
 % Set the sampling rate and cutoff frequency
-Fs = EEG.finalFS; % Sampling rate in Hz
 % Set the sampling rate and bandpass filter parameters
 Fc2 = 0.5; % Upper cutoff frequency in Hz
 
@@ -33,7 +45,7 @@ Fc3 = 0.01;
 % Apply the filter using filtfilt
 filtered_trace_2 = filtfilt(b, a, EEG.data);
 
-Fc4 = 0.1; % Lower cutoff frequency in Hz
+Fc4 = .1; % Lower cutoff frequency in Hz
 % Set filter coefficients for a Butterworth filter
 [b, a] = butter(2, [Fc4, Fc2]/(Fs/2), 'bandpass');
 % Apply the filter using filtfilt

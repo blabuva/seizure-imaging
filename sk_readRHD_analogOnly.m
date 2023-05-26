@@ -339,7 +339,7 @@ if (data_present)
 % I (Scott) edited the section below to skip reading in the amplifier data
 %  This speeds up the loading when reading from a remote drive (e.g. over a slow ethernet connection)
 %  This was the original line:   amplifier_data(:, amplifier_index:(amplifier_index + num_samples_per_data_block - 1)) = fread(fid, [num_samples_per_data_block, num_amplifier_channels], 'uint16=>int32')';
-            fread(fid, 1, 'uint16=>int32',2*num_samples_per_data_block*num_amplifier_channels-2); % SCOTT'S EDIT TO SKIP READING AMPLIFIER DATA
+fread(fid, 1, 'uint16=>int32',2*num_samples_per_data_block*num_amplifier_channels-2); % SCOTT'S EDIT TO SKIP READING AMPLIFIER DATA
 %             fprintf('\nCurrent file position is %d\n',ftell(fid));
 %----------------------------------------------------------------------------------------------------------------------------------------------------%
         end
