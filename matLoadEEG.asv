@@ -50,8 +50,7 @@ timeVec = ((1:length(data))-1)/samplerate(eegChannel);  % create time vector
 dsFactor = floor(samplerate(eegChannel) / targetFS);    % downsampling factor to achieve targetFS
 finalFS = samplerate(eegChannel) / dsFactor;            % calculate ultimate sampling frequency to be used 
 EEGdata = data(eegChannel,1:dsFactor:end)';             % subsample raw data
-EEGtime = timeVec(1:dsFactor:end)';                      % subsample the time vector at dsFactor
-EEGtime = double(tv(1:dsFactor:end));
+EEGtime = timeVec(1:dsFactor:end);                      % subsample the time vector at dsFactor
 
 %% Create output structure and assign values to fields
 EEG = struct('data',EEGdata,...

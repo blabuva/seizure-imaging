@@ -21,8 +21,19 @@ function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, target
 %   seizures - structure containing information about detected seizures
 %
 % Written by Scott Kilianski
-% Updated 1/10/2023
+% Updated 5/26/2023
+%% Quick check to get the correct 'findpeaks' function because the chronux
+% toolbox function of the same name sometimes shadows the MATLAB signal
+% processing toolobox version (i.e. the version we actually want)
+%-------------------------------------------------------------------------%
+fpList = which('findpeaks.m','-all'); % find all 'findpeaks.m'
+fpInd = find(contains(fpList,[filesep 'toolbox' filesep 'signal' filesep 'signal' filesep 'findpeaks.m']),1,'first'); %get location of the correct 'findpeaks.m'
+currdir = cd; % save current directory path
+cd(fileparts(fpList{fpInd})); % change directory to locatin of correct 'findpeaks.m'
+fpFun = @findpeaks; % set function handle to correct 'findpeaks.m'
+cd(currdir); % cd back to original directory
 
+%-------------------------------------------------------------------------%
 %% Parse inputs
 validScalarNum = @(x) isnumeric(x) && isscalar(x);
 default_filename = [];
@@ -78,8 +89,8 @@ end
 detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
 frange = [0 50];                                            % frequency range used for spectrogram
-[spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*100],...
-    'window',1,'overlap',0.5,'range',frange);              % computes the spectrogram
+[spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*0.01],...
+    'window',1,'overlap',0.5,'range',frange,'show','on');              % computes the spectrogram
 bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
@@ -112,18 +123,6 @@ ts = cell2mat(arrayfun(@(x) find(x==EEG.time), ...
     startEnd_interp,...
     'UniformOutput',0)); % getting start and end indices
 outfn = sprintf('%s%s%s_seizures.mat',fp,'\',fn); % name of the output file
-
-%-------------------------------------------------------------------------%
-%quick check to get the correct 'findpeaks' function because the chronux
-%toolbox function of the same name sometimes shadows the MATLAB signal
-%processing toolobox version (i.e. the version we actually want)
-fpList = which('findpeaks.m','-all'); % find all 'findpeaks.m'
-fpInd = find(contains(fpList,[filesep 'toolbox' filesep 'signal' filesep 'signal' filesep 'findpeaks.m']),1,'first'); %get location of the correct 'findpeaks.m'
-currdir = cd; % save current directory path
-cd(fileparts(fpList{fpInd})); % change directory to locatin of correct 'findpeaks.m'
-fpFun = @findpeaks; % set function handle to correct 'findpeaks.m'
-cd(currdir); % cd back to original directory
-%-------------------------------------------------------------------------%
 
 for ii = 1:size(ts,1)
     eegInd = ts(ii,1):ts(ii,2);
