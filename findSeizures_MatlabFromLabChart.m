@@ -112,9 +112,9 @@ fprintf('%.1f%% of recording is has 60Hz noise\n', ...
 
 % Find where power crosses threhold (rising and falling edge)
 tVal = prctile(bands.swd, ptCut);           % find the bandpower threshold value based on percentile threshold (ptCut)
-putSeiz = bands.swd>tVal & ~badI;     % find putative seizure times (i.e. seizure frequency band power threshold and not 60Hz-noise violations)
-riseI = find(diff(bands.swd>tVal)>0) + 1;   % seizure rising edge index
-fallI = find(diff(bands.swd>tVal)<0) + 1;   % seizure falling edge index
+putSeiz = bands.swd>tVal & ~badI;           % find putative seizure times (i.e. seizure frequency band power threshold and not 60Hz-noise violations)
+riseI = find(diff(putSeiz)>0) + 1;   % seizure rising edge index
+fallI = find(diff(putSeiz)<0) + 1;   % seizure falling edge index
 
 %-------------------------------------------------------------------------%
 %% ---------------- Find putative seizures, remove events that are too short, merge those that happen close in time, detect troughs, and store everything in structure(seizures) ---------------- %%
