@@ -1,26 +1,30 @@
 %% Dropped frame check
-% [fn, fp] = uigetfile('*.adicht');
 fp = uigetdir;
 dList = dir(fp);
-fn = dList(contains({dList.name},'.adicht')).name;
+fn = dList(contains({dList.name},'.abf')).name;
 eeg_filename = fullfile(fp,fn);
-EEG = adiLoadEEG(eeg_filename,2,20000);
-x = EEG.data>3; % generating TTL trace
+[EEG,si,h] = abf2load(eeg_filename);
+x = EEG(:,2)>3; % generating TTL trace
 rte = diff(x)>0; %rising TTL edges
 z = diff(x)<0; %falling TTL edges
 yi = find(rte)+1; % indices of rising edges
 zi = find(z)+1; % indices of falling edges
-figure;
-subplot(211);
-histogram((zi-yi)/EEG.finalFS*1000); % histogram of difference between rising and falling (estimate of exposure time)
-title('Time (in ms) between rising and falling edges (exposure time)');
-subplot(212);
-histogram(diff(yi)/EEG.finalFS*1000); % histogram of intervals between rising edges (inter-frame interval)
-title('Time (in ms) between rising edges (inter-frame interval)')
-xlabel('Time (milliseconds)')
+SI = si * 10e-7; % sampling interval in seconds
+FS = 1/SI;
 
 %%
-% [fn,fp] = uigetfile('*.dcimg');
+if 0
+    figure;
+    subplot(211);
+    histogram((zi-yi)/FS*1000); % histogram of difference between rising and falling (estimate of exposure time)
+    title('Time (in ms) between rising and falling edges (exposure time)');
+    subplot(212);
+    histogram(diff(yi)/FS*1000); % histogram of intervals between rising edges (inter-frame interval)
+    title('Time (in ms) between rising edges (inter-frame interval)')
+    xlabel('Time (milliseconds)')
+end
+
+%%
 fn = dList(contains({dList.name},'.dcimg')).name;
 dcimg_filename = fullfile(fp,fn);
 hdcimg = dcimgmex('open',dcimg_filename);                     % open the original .dcimg file

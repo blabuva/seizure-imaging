@@ -90,7 +90,7 @@ detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
 frange = [0 50];                                            % frequency range used for spectrogram
 [spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*0.01],...
-    'window',1,'overlap',0.5,'range',frange,'show','on');              % computes the spectrogram
+    'window',1,'overlap',0.5,'range',frange);              % computes the spectrogram
 bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
@@ -103,26 +103,24 @@ pzit = 2; % gap length under which to merge (seconds)
 mszt = .5; % minimum seizure time duration (seconds)
 ttv = -std(EEG.data)*ttv; % calculate trough threshold value (standard deviation * user-defined multiplier)
 
-%-------------------------------------------------------------------------%
-% INCLUDE BIT HERE TO CHECK IF CODE IS TRYING TO GRAB TIME OUTSIDE OF ACTUAL DATA (BECAUSE OF TIME BUFFER AROUND PUTATIVE SEIZURES)
-%-------------------------------------------------------------------------%
-
 if fallI(1) < riseI(1)
     fallI(1) = [];
 end
 if riseI(end) > fallI(end)
     riseI(end) = [];
 end
-startEnd = [t(riseI)-tb,t(fallI)+tb];           % seizure start and end times
+obLog = t(riseI)-tb<EEG.time(1) | t(fallI)+tb>EEG.time(end);    % logical of detected seizures too close to start or end of recording
+startEnd = [t(riseI)-tb,t(fallI)+tb];               % seizure start and end times
+startEnd(obLog,:) = [];
 startEnd_interp = interp1(EEG.time,EEG.time,...
-    startEnd,'nearest');                    % interpolate from spectrogram time to nearest EEG timestamps
-startEnd_interp = szmerge(startEnd_interp, pzit); % merge seizure if/when appropriate
-tooShortLog = diff(startEnd_interp,1,2)<mszt; % find too-short seizures
-startEnd_interp(tooShortLog,:) = []; % remove seizures that are too short
+    startEnd,'nearest');                            % interpolate from spectrogram time to nearest EEG timestamps
+startEnd_interp = szmerge(startEnd_interp, pzit);   % merge seizure if/when appropriate
+tooShortLog = diff(startEnd_interp,1,2)<mszt;       % find too-short seizures
+startEnd_interp(tooShortLog,:) = [];                % remove seizures that are too short
 ts = cell2mat(arrayfun(@(x) find(x==EEG.time), ...
     startEnd_interp,...
-    'UniformOutput',0)); % getting start and end indices
-outfn = sprintf('%s%s%s_seizures.mat',fp,'\',fn); % name of the output file
+    'UniformOutput',0));                            % getting start and end indices
+outfn = sprintf('%s%s%s_seizures.mat',fp,'\',fn);   % name of the output file
 
 for ii = 1:size(ts,1)
     eegInd = ts(ii,1):ts(ii,2);

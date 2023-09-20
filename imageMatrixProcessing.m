@@ -21,11 +21,9 @@ zsz = size(img.Data.frames,3)/2; % divide by 2 because you only want half (ie th
 msk2 = msk(rrange,crange);
 trace = reshape(img.Data.frames(rrange,crange,[1:2:(zsz*2)]), xsz*ysz,zsz)'; % linearize pixels
 
-
 %% Apply dF/F function and reshape data back into height x width x frames shape
 dff = pixelFilter(trace,25,.1);
 dff = reshape(dff',ysz,xsz,zsz);        % reshape the imaging matrix back into (height x width x # of frames)
-%expDecayFit();
 
 %% ---- Loading camera TTLs and EEG data ---- %%
 

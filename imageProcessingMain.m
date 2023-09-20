@@ -2,11 +2,19 @@
 % This code can be adjusted for many different parameters and include
 % different analyses
 
+%% Step 0
+% Create dataset structure wherein information about the dataset will be stored
+dsDir = uigetdir;
+DS = struct;
+save(fullfile(dsDir,'DS_struct.mat'),"DS",'-v7.3');
 
-%% Step 1 - Convert .dcimg files to .imgbin files
+%% Step 1
+% Convert .dcimg files to .imgbin files
 % Conversion to .imgbin is necessary to work with data on Linux systems
 % As such, this step can only be done on Windows systems
-dcimgToBin;
+
+
+%% Dropped frame check
 
 %% Step 2 - Motion correction
 [fn,fp] = uigetfile('*.imgbin'); % UI to select .imgbin file
@@ -22,7 +30,6 @@ diffZero = max(diffImage,0);
 divImage = (diffZero ./ mean(nm470,3));
 finalMin = min(divImage(:));
 finalMax = max(divImage(:));
-
 
 %% SEGEMENT INTO DIFFERENT CORTICAL REGIONS???
 

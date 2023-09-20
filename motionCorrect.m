@@ -14,17 +14,20 @@ function motionCorrect(frames,varargin)
 %   NONE - but saves a .mc file with the motion corrected data
 %
 % Written by Scott Kilianski
-% Updated on 5-8-2023
+% Updated on 8/29/2023
 %   ------------------------------------------------------------   %
 %% ---- Handle data ---- %%%
-imgbinR
 Y = single(frames);                 % convert to single precision 
 T = size(Y,ndims(Y));
 Y = Y - min(Y(:));
 
 %% Non-rigid motion correction
-options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),'grid_size',[32,32],'mot_uf',4,'bin_width',200,'max_shift',25,'max_dev',3,'us_fac',50,'init_batch',200);
-tic; [M2,shifts2,template2,options_nonrigid] = normcorre_batch(Y,options_nonrigid); toc
+options_nonrigid = NoRMCorreSetParms('d1',size(Y,1),'d2',size(Y,2),...
+    'grid_size',[32,32],'mot_uf',4,'bin_width',200,'max_shift',25,...
+    'max_dev',3,'us_fac',50,'init_batch',200);
+tic; 
+[M2,shifts2,template2,options_nonrigid] = normcorre_batch(Y,options_nonrigid); 
+toc
 
 %% Save to output data
 foutID = fopen(foutN,'w');                                % fopen the fout file
