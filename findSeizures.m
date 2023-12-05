@@ -66,6 +66,7 @@ detectionParameters(1,:) = {'pband','ptCut','ttv','eegChannel'};
 detectionParameters(2,:) = {pband,ptCut,ttv,eegChannel};
 
 %% Load in data
+fprintf('Loading data...\n')
 if isempty(filename)
     [fn,fp,rv] = uigetfile({'*.abf;*.mat;*.adicht;*.rhd'});
     if ~rv % if no file selected, end function early
@@ -83,11 +84,14 @@ elseif strcmp(fext,'.mat')
     EEG = matLoadEEG(filename,eegChannel,targetFS);     % loads .mat files that were exported from LabChart
 elseif strcmp(fext,'.abf')
     EEG = abfLoadEEG(filename,eegChannel,targetFS);     % loads .abf files
+elseif strcmp(fext,'.bin')
+    EEG = binLoadEEG(filename,targetFS);   % loads .rhd files
 else
     error('File type unrecognized. Use .rhd, .adicht, .mat file types only');
 end
 detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
+fprintf('Calculating spectrogram and bandpower...\n');
 frange = [0 50];                                            % frequency range used for spectrogram
 [spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*0.01],...
     'window',1,'overlap',0.5,'range',frange);              % computes the spectrogram
@@ -99,10 +103,11 @@ riseI = find(diff(bands.broadLow>tVal)>0) + 1;  % seizure rising edge index
 fallI = find(diff(bands.broadLow>tVal)<0) + 1;  % seizure falling edge index
 
 %% Find putative seizures, merge those that happen close in time, detect troughs, and store everything in structure(sz)
-pzit = 2; % gap length under which to merge (seconds)
+pzit = 1; % gap length under which to merge (seconds)
 mszt = .5; % minimum seizure time duration (seconds)
+goodTRint = 0.05; % minimum interval between SWD troughs (seconds)
 ttv = -std(EEG.data)*ttv; % calculate trough threshold value (standard deviation * user-defined multiplier)
-
+fprintf('Finding putative seizures...\n')
 if fallI(1) < riseI(1)
     fallI(1) = [];
 end
@@ -126,61 +131,79 @@ for ii = 1:size(ts,1)
     eegInd = ts(ii,1):ts(ii,2);
     seizures(ii).time = EEG.time(eegInd); % find EEG.time-referenced.
     seizures(ii).EEG = EEG.data(eegInd);
+    if strcmp(fext,'.bin')
+        seizures(ii).idx = EEG.idx(eegInd);
+    end
     seizures(ii).type = 'Unclassified';
     [trgh, locs] = fpFun(-seizures(ii).EEG); % find troughs (negative peaks)
     locs(-trgh>ttv) = []; % remove those troughs that don't cross the threshold (ttv)
     trgh(-trgh>ttv) = []; % remove those troughs that don't cross the threshold (ttv)
+
+    %if troughs are too close together, only take the maximum negative one
+    trInt = diff(locs) * (1/EEG.finalFS); % time interval between troughs
+    tooSmall = find(trInt < goodTRint,1,'first'); %
+    while tooSmall % run iteratively until all the too-close troughs are removed
+        if trgh(tooSmall) > trgh(tooSmall+1)
+            locs(tooSmall+1) = []; 
+            trgh(tooSmall+1)=[];    %remove the smaller of the too troughs
+        else
+            locs(tooSmall) = []; 
+            trgh(tooSmall)=[]; %remove the smaller of the too troughs
+        end
+        trInt = diff(locs) * (1/EEG.finalFS); % time interval between troughs
+        tooSmall = find(trInt < goodTRint,1,'first'); %
+    end
     seizures(ii).trTimeInds = locs; seizures(ii).trVals = -trgh; % store trough time (indices) and values in sz structure
     seizures(ii).filename = outfn;
-    seizures(ii).parameters = detectionParameters;
-end
-
-%% Plotting trace, thresholds, and identified putative seizures
-if plotFlag % plotting option
-    figure; ax(1) = subplot(311);
-    plot(EEG.time, EEG.data,'k','LineWidth',2); title('EEG');
-    hold on
-    plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
-    ax(2) = subplot(312);
-    plot(t,bands.broadLow,'k','linewidth',2);
-    title(sprintf('Power in %d-%dHz Range',pband(1),pband(2)));
-    hold on
-    plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
-    ax(3) = subplot(313);
-    cutoffs = [3 8];
-    PlotColorMap(log(spectrogram),1,'x',t,'y',f,'cutoffs',cutoffs);
-    title('Spectrogram'); xlabel('Time (sec)'); ylabel('Frequency (Hz)');
-    linkaxes(ax,'x');
-    axes(ax(1)); hold on;
-    yl = get(gca,'YLim');
-    xlim([EEG.time(1) EEG.time(end)])
-    for ii = 1:size(startEnd_interp,1)
-        patch([startEnd_interp(ii,:),fliplr(startEnd_interp(ii,:))],...
-            [yl(1),yl(1),yl(2),yl(2)],'g',...
-            'EdgeColor','none','FaceAlpha',0.25);
+        seizures(ii).parameters = detectionParameters;
     end
-end % plotting option end
 
-[fp, fn, fext] = fileparts(outfn);
-try % try statement here because sometimes saving fails due to insufficient permissions
-    save(outfn,'seizures'); % save output into same folder as filename
-    fprintf('%s%s saved in %s\n',fn,fext,fp)
-catch
-    fprintf('%s%s could not be saved in %s, likely because of insufficient permissions\n',fn,fext,fp)
-end
+    %% Plotting trace, thresholds, and identified putative seizures
+    if plotFlag % plotting option
+        figure; ax(1) = subplot(311);
+        plot(EEG.time, EEG.data,'k','LineWidth',2); title('EEG');
+        hold on
+        plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
+        ax(2) = subplot(312);
+        plot(t,bands.broadLow,'k','linewidth',2);
+        title(sprintf('Power in %d-%dHz Range',pband(1),pband(2)));
+        hold on
+        plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
+        ax(3) = subplot(313);
+        cutoffs = [3 8];
+        PlotColorMap(log(spectrogram),1,'x',t,'y',f,'cutoffs',cutoffs);
+        title('Spectrogram'); xlabel('Time (sec)'); ylabel('Frequency (Hz)');
+        linkaxes(ax,'x');
+        axes(ax(1)); hold on;
+        yl = get(gca,'YLim');
+        xlim([EEG.time(1) EEG.time(end)])
+        for ii = 1:size(startEnd_interp,1)
+            patch([startEnd_interp(ii,:),fliplr(startEnd_interp(ii,:))],...
+                [yl(1),yl(1),yl(2),yl(2)],'g',...
+                'EdgeColor','none','FaceAlpha',0.25);
+        end
+    end % plotting option end
+
+    [fp, fn, fext] = fileparts(outfn);
+    try % try statement here because sometimes saving fails due to insufficient permissions
+        save(outfn,'seizures'); % save output into same folder as filename
+        fprintf('%s%s saved in %s\n',fn,fext,fp)
+    catch
+        fprintf('%s%s could not be saved in %s, likely because of insufficient permissions\n',fn,fext,fp)
+    end
 
 end %main function end
 
-function startEnd_interp = szmerge(startEnd_interp, pzit)
-%szmerge Merges overlapping or close-in-time seizures
-pzInts = startEnd_interp(2:end,1)-startEnd_interp(1:end-1,2); % intervals between putative seizures
-fprintf('Merging putative seizures if/when appropriate...\n')
-tmInd = find(pzInts<pzit,1,'first'); % index of 1st putative seizure pair to merge
-while tmInd % if putative seizures to merge, do it, then check for more
-    startEnd_interp(tmInd,2) = startEnd_interp(tmInd+1,2); % replace the end time
-    startEnd_interp(tmInd+1,:) = []; % remove 2nd putative seizure in the pair
-    pzInts = startEnd_interp(2:end,1)-startEnd_interp(1:end-1,2); % intervals between putative seizures
-    tmInd = find(pzInts<pzit,1,'first'); % check for more pairs to merge
-end
+    function startEnd_interp = szmerge(startEnd_interp, pzit)
+        %szmerge Merges overlapping or close-in-time seizures
+        pzInts = startEnd_interp(2:end,1)-startEnd_interp(1:end-1,2); % intervals between putative seizures
+        fprintf('Merging putative seizures if/when appropriate...\n')
+        tmInd = find(pzInts<pzit,1,'first'); % index of 1st putative seizure pair to merge
+        while tmInd % if putative seizures to merge, do it, then check for more
+            startEnd_interp(tmInd,2) = startEnd_interp(tmInd+1,2); % replace the end time
+            startEnd_interp(tmInd+1,:) = []; % remove 2nd putative seizure in the pair
+            pzInts = startEnd_interp(2:end,1)-startEnd_interp(1:end-1,2); % intervals between putative seizures
+            tmInd = find(pzInts<pzit,1,'first'); % check for more pairs to merge
+        end
 
-end % szmerge function end
+    end % szmerge function end

@@ -12,7 +12,9 @@ function seizures = curateSeizures(seizures)
 %% Body of function here
 % Plotting code below
 szFig = figure; ax = axes;
-yl = [-10 10]; % BETTER YLIMIT STRATEGY WOULD BE NICE
+x = cellfun(@abs, {seizures.EEG}, 'UniformOutput', false);  % convert EEGs to absolute value
+bigY = max(cellfun(@max,x)); % find maximum value of all EEG
+yl = [-bigY*1.1 bigY*1.1]; % BETTER YLIMIT STRATEGY WOULD BE NICE
 p = plot(0,0,'k','LineWidth',1.5); % initialize line plot for EEG
 set(ax,'YLim',yl);
 hold on
@@ -40,8 +42,10 @@ close(szFig);
 seizures(strcmp({seizures.type},'remove')) = []; % removes seizures tagged for removal
 [fp, fn, fext] = fileparts(seizures(1).filename);
 dtime = string(datetime('now','Format','yyyyMMdd_HH_mm_ss'));
-saveName = sprintf('%s%s%s%s%s.mat',fp,'\',fn,'_curated_',dtime);
+ffn = sprintf('%s%s%s',fn,'_curated_',dtime);
+saveName = sprintf('%s%s%s.mat',fp,'\',ffn);
 save(saveName,'seizures'); % update the saved file
+fprintf('%s saved in %s\n',ffn,fp)
 
 end %function end
 
@@ -92,8 +96,8 @@ while ~loopdir
         end
         set(ax.Title,'String',sprintf(['''a'' for previous. '...
             '''d'' for next. '...
-            'Enter to add/remove peaks. '...
-            'Spacebar to end curation.\n'...
+            'Spacebar to add/remove peaks. '...
+            'Enter to end curation.\n'...
             'Seizure %d - ''Type %s'''],ki,csz.type)); % update plot title
     end
 end

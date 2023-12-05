@@ -1,9 +1,10 @@
-Fs = 30000; % Sampling rate in Hz
-time = ;
-lfp = ;
+Fs = EEG.finalFS; % Sampling rate in Hz
+time = EEG.time;
+lfp = EEG.data;
+
 %% Low band
-lfc = 0.5; % Lower cutoff frequency in Hz
-ufc = 8; % Upper cutoff frequency in Hz
+lfc = 4; % Lower cutoff frequency in Hz
+ufc = 10; % Upper cutoff frequency in Hz
 
 % Set filter coefficients for a Butterworth filter
 [b, a] = butter(2, [lfc, ufc]/(Fs/2), 'bandpass');
