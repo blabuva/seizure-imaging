@@ -10,7 +10,14 @@ function dcimgToBin(filename)
 % 10/11/2022
 
 %%
+<<<<<<< HEAD
 % filename = 'Z:\CSD_Project\20230818\brain00001.dcimg';
+=======
+defaultFile = 'X:\SI_012_20221215\SI_012_2022121500001.dcimg';
+if ~exist('filename','var')
+    filename = defaultFile;
+end
+>>>>>>> 3b15287d38a20df873aa23a6c21ebd082a9db9cc
 [pth,nm,ext] = fileparts(filename);
 foutN = fullfile(pth,strcat(nm,'.imgbin'));                   % filename of the output file (.imgbin)
 foutID = fopen(foutN,'w');                                 % fopen the fout file
