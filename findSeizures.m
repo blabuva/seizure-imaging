@@ -158,6 +158,11 @@ for ii = 1:size(ts,1)
         seizures(ii).parameters = detectionParameters;
     end
 
+    tmp ={seizures(:).trTimeInds};
+    badLog = cellfun(@isempty,tmp);
+    seizures(badLog) = [];
+    startEnd_interp(badLog,:) = [];
+    
     %% Plotting trace, thresholds, and identified putative seizures
     if plotFlag % plotting option
         figure; ax(1) = subplot(311);
