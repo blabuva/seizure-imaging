@@ -58,8 +58,9 @@ end
 binVec = time(1):binSize:time(end);
 [bv,be] = histcounts(rt,binVec);
 bc = be(1:end-1) + mean(diff(be))/2; % bin centers
-distK = 0.9576; % distance constant: distance per output of rotary encoder (in cm)
-spdVec = (bv*distK)/binSize; % (cm/sec)
+% distK = 0.9576; % distance constant: distance per output of rotary encoder (in cm)
+distK = 0.6604; 
+spdVec = (bv*distK)/binSize; % delta_dist/delta_time (cm per second)
 spd_smoothed = smoothdata(spdVec,"movmean",smoothWin);
 
 %% Plot, if plotFlag is on

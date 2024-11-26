@@ -62,7 +62,7 @@ while ~loopdir
                 csz.type = '1';
             case 'numpad1'
                 csz.type = '1';
-            case '2'
+            case '2' 
                 csz.type = '2';
             case 'numpad2'
                 csz.type = '2';
@@ -74,8 +74,12 @@ while ~loopdir
                 csz.type = 'to-be-removed';
             case 'a'
                 loopdir = -1;
+            case 'leftarrow' 
+                loopdir = -1;
             case 'd'
                 loopdir = 1;
+            case 'rightarrow'
+                loopdir = 1; 
             case 'downarrow' % change mouse to/from zoom tool
                 zoom toggle
             case 'uparrow' % rescale axes

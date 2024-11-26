@@ -14,14 +14,15 @@ function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, target
 %   Name: 'targetFS'     Value: target sampling frequency. Used to downsample data to
 %                               reduce computational load (default = 200)
 %   Name: 'plotFlag'     Value: 0 or 1 for no plot or plotting options, respectively (default = 1)
-%   Name: 'tb'           Value: time buffer (in seconds) before and after seizures to grab  (default = 2)
+%   Name: 'tb'           Value: time buffer (in seconds) before and after seizures to grab  (default = 1)
 %   %------------------------------------------------------------%
 %
 % OUTPUTS:
 %   seizures - structure containing information about detected seizures
 %
 % Written by Scott Kilianski
-% Updated 5/26/2023
+% Updated 11/26/2024
+
 %% Quick check to get the correct 'findpeaks' function because the chronux
 % toolbox function of the same name sometimes shadows the MATLAB signal
 % processing toolobox version (i.e. the version we actually want)
@@ -43,7 +44,7 @@ default_ttv = 3;
 default_eegChannel = 1;
 default_targetFS = 200;
 default_plotFlag = 1;
-default_tb = 2; % time buffer (in seconds) - time to grab before and after each detected seizure
+default_tb = 1; % time buffer (in seconds) - time to grab before and after each detected seizure
 p = inputParser;
 addParameter(p,'filename',default_filename,@(x) isstring(x) || ischar(x));
 addParameter(p,'pband',default_pband,@(x) numel(x)==2);
@@ -68,7 +69,7 @@ detectionParameters(2,:) = {pband,ptCut,ttv,eegChannel};
 %% Load in data
 fprintf('Loading data...\n')
 if isempty(filename)
-    [fn,fp,rv] = uigetfile({'*.abf;*.mat;*.adicht;*.rhd'});
+    [fn,fp,rv] = uigetfile({'*.abf;*.mat;*.adicht;*.rhd;*.txt;*.bin'});
     if ~rv % if no file selected, end function early
         return
     else
@@ -76,17 +77,21 @@ if isempty(filename)
     end
 end
 [fp, fn, fext] = fileparts(filename);           % get file name, path, and extension
-if strcmp(fext,'.adicht')
-    EEG = adiLoadEEG(filename,eegChannel,targetFS);     % loads .adicht files
-elseif strcmp(fext,'.rhd')
-    EEG = intanLoadEEG(filename,eegChannel,targetFS);   % loads .rhd files
-elseif strcmp(fext,'.mat')
-    EEG = matLoadEEG(filename,eegChannel,targetFS);     % loads .mat files that were exported from LabChart
-elseif strcmp(fext,'.abf')
-    EEG = abfLoadEEG(filename,eegChannel,targetFS);     % loads .abf files
-elseif strcmp(fext,'.bin')
-    EEG = binLoadEEG(filename,targetFS);   % loads .rhd files
-else
+try
+    if strcmp(fext,'.adicht')
+        EEG = adiLoadEEG(filename,eegChannel,targetFS);     % loads .adicht files
+    elseif strcmp(fext,'.rhd')
+        EEG = intanLoadEEG(filename,eegChannel,targetFS);   % loads .rhd files
+    elseif strcmp(fext,'.mat')
+        EEG = matLoadEEG(filename,eegChannel,targetFS);     % loads .mat files that were exported from LabChart
+    elseif strcmp(fext,'.abf')
+        EEG = abfLoadEEG(filename,eegChannel,targetFS);     % loads .abf files
+    elseif strcmp(fext,'.bin')
+        EEG = binLoadEEG(filename,targetFS);                % loads .rhd files
+    else
+        EEG = txtLoadEEG(filename,eegChannel,targetFS);     % loads .txt files
+    end
+catch
     error('File type unrecognized. Use .rhd, .adicht, .mat file types only');
 end
 detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
@@ -94,7 +99,7 @@ detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
 fprintf('Calculating spectrogram and bandpower...\n');
 frange = [0 50];                                            % frequency range used for spectrogram
 [spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*0.01],...
-    'window',1,'overlap',0.5,'range',frange);              % computes the spectrogram
+    'window',1,'overlap',0.75,'range',frange);              % computes the spectrogram
 bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
@@ -175,7 +180,7 @@ for ii = 1:size(ts,1)
         hold on
         plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
         ax(3) = subplot(313);
-        cutoffs = [3 8];
+        cutoffs = [-10 0];
         PlotColorMap(log(spectrogram),1,'x',t,'y',f,'cutoffs',cutoffs);
         title('Spectrogram'); xlabel('Time (sec)'); ylabel('Frequency (Hz)');
         linkaxes(ax,'x');

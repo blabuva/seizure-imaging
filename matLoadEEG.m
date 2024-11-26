@@ -1,6 +1,5 @@
 function EEG = matLoadEEG(filename,eegChannel,targetFS)
-%% matLoadEEG loads and downsamples the EEG data from a MATLAB data file
-% (.mat) created by exporting from LabChart
+%% matLoadEEG loads and downsamples the EEG data from a MATLAB data file (.mat) created by exporting from LabChart
 % INPUTS:
 %   filename - full file name to the .adicht file (including path)
 %   eegChannel - channel number of the EEG, typically 1
