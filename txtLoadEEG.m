@@ -12,7 +12,7 @@ function EEG = txtLoadEEG(filename,eegChannel,targetFS)
 %       finalFS - the sampling frequency ultimately used (in samples/second)
 %
 % Written by Scott Kilianski
-% 11/26/2024
+% Updated 12/06/2024
 
 %% Set defaults as needed if not user-specific by inputs
 if ~exist('eegChannel','var')
@@ -25,7 +25,7 @@ end
 %% Load and properly format data
 funClock = tic;     % function clock
 [EEGdata] = importdata(filename);
-sample_rate = 1000;
+sample_rate = 200; % I think Mark usually downsamples to 200Hz
 EEGtime = (0:size(EEGdata,1)-1)./sample_rate;
 
 %% Downsample and format data

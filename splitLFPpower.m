@@ -18,7 +18,7 @@ function pb = splitLFPpower(varargin)
 %% ---- Parameters for this function ---- %%%
 plotFlag = 0;
 bl = [0.5 8];
-bh = [10 500];
+bh = [100 500];
 lfp = varargin{1};
 
 %% ---- Parameters for spectrogram ---- %%%
