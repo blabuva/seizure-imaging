@@ -21,7 +21,7 @@ function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, target
 %   seizures - structure containing information about detected seizures
 %
 % Written by Scott Kilianski
-% Updated 11/26/2024
+% Updated 3/25/2025
 
 %% Quick check to get the correct 'findpeaks' function because the chronux
 % toolbox function of the same name sometimes shadows the MATLAB signal
@@ -66,6 +66,8 @@ tb = p.Results.tb;
 detectionParameters(1,:) = {'pband','ptCut','ttv','eegChannel'};
 detectionParameters(2,:) = {pband,ptCut,ttv,eegChannel};
 
+minNumTroughs = 5;
+
 %% Load in data
 fprintf('Loading data...\n')
 if isempty(filename)
@@ -95,6 +97,33 @@ catch
     error('File type unrecognized. Use .rhd, .adicht, .mat file types only');
 end
 detectionParameters = [detectionParameters,{'finalFS';EEG.finalFS}];
+
+%% Establish and Apply RMS-based Threshold for Artifact Rejection
+RMSwin = 30; % window size (seconds) for RMS calculation
+xrms = @(s, n) sqrt(movmean(s.^2, n));      % Moving RMS Function, 'n': Window Of Consecutive Data
+sigRMS = xrms(EEG.data,EEG.finalFS*RMSwin); % Apply the Moving RMS function
+
+figure;
+sax(1) = subplot(2,2,1);
+plot(EEG.time,EEG.data,'k');    % plot raw data
+title('Raw Data')
+sax(2) = subplot(2,2,3);
+plot(EEG.time,sigRMS,'k');      %
+title(sprintf('RMS (%.1f second windows)',RMSwin));
+bax = subplot(2,2,[2,4]);
+histogram(sigRMS,'FaceColor','k');
+title(sprintf(['RMS Values Distribution' ...
+    '\nClick on x-value to use for noise rejection']));
+linkaxes(sax,'x');
+[RMSthresh,~] = ginput(1);
+axes(sax(2));
+hold on
+plot([EEG.time(1), EEG.time(end)], ...
+    [RMSthresh RMSthresh], 'r','LineWidth',2);
+hold off
+boLog = sigRMS > RMSthresh; % black out log
+EEG.data(boLog) = 0; % DOES NaN work???
+
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
 fprintf('Calculating spectrogram and bandpower...\n');
 frange = [0 50];                                            % frequency range used for spectrogram
@@ -164,7 +193,7 @@ for ii = 1:size(ts,1)
     end
 
     tmp ={seizures(:).trTimeInds};
-    badLog = cellfun(@isempty,tmp);
+    badLog = cellfun(@numel,tmp) < minNumTroughs;
     seizures(badLog) = [];
     startEnd_interp(badLog,:) = [];
     
