@@ -132,6 +132,7 @@ frange = [0 50];                                            % frequency range us
 bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
+pb_delt_ratio = ; bands.broadLow./bands.delta
 tVal = prctile(bands.broadLow, ptCut);          % find the bandpower threshold value based on percentile threshold (ptCut)
 riseI = find(diff(bands.broadLow>tVal)>0) + 1;  % seizure rising edge index
 fallI = find(diff(bands.broadLow>tVal)<0) + 1;  % seizure falling edge index
