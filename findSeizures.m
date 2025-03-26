@@ -132,10 +132,10 @@ frange = [0 50];                                            % frequency range us
 bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
-pb_delt_ratio = ; bands.broadLow./bands.delta
-tVal = prctile(bands.broadLow, ptCut);          % find the bandpower threshold value based on percentile threshold (ptCut)
-riseI = find(diff(bands.broadLow>tVal)>0) + 1;  % seizure rising edge index
-fallI = find(diff(bands.broadLow>tVal)<0) + 1;  % seizure falling edge index
+pb_delt_ratio = bands.broadLow./bands.delta;    % compute ratio of broadLow to delta
+tVal = prctile(pb_delt_ratio, ptCut);          % find the bandpower threshold value based on percentile threshold (ptCut)
+riseI = find(diff(pb_delt_ratio>tVal)>0) + 1;  % seizure rising edge index
+fallI = find(diff(pb_delt_ratio>tVal)<0) + 1;  % seizure falling edge index
 
 %% Find putative seizures, merge those that happen close in time, detect troughs, and store everything in structure(sz)
 pzit = 1; % gap length under which to merge (seconds)
@@ -205,7 +205,7 @@ for ii = 1:size(ts,1)
         hold on
         plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
         ax(2) = subplot(312);
-        plot(t,bands.broadLow,'k','linewidth',2);
+        plot(t,pb_delt_ratio,'k','linewidth',2);
         title(sprintf('Power in %d-%dHz Range',pband(1),pband(2)));
         hold on
         plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
