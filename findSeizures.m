@@ -1,5 +1,5 @@
 function seizures = findSeizures(varargin)%pband, ptCut, ttv, eegChannel, targetFS)
-%% findSeizures Finds seizures in an EEG/LFP traces based on power thresholding
+%% findSeizures Finds seizures in an EEG/LFP traces based on power thresholding in 2nd harmonic
 %
 % INPUTS:
 %   %----------------------Name-Value-Pairs----------------------%
@@ -122,20 +122,21 @@ plot([EEG.time(1), EEG.time(end)], ...
     [RMSthresh RMSthresh], 'r','LineWidth',2);
 hold off
 boLog = sigRMS > RMSthresh; % black out log
-EEG.data(boLog) = 0; % DOES NaN work???
+EEG.data(boLog) = 0; % set data during noisey periods to 0
 
 %% Calculate spectrogram and threshold bandpower in band specificed by pband
 fprintf('Calculating spectrogram and bandpower...\n');
-frange = [0 50];                                            % frequency range used for spectrogram
+frange = [0 50]; % frequency range used for spectrogram
+pband = pband*2; % convert passband to 2nd harmonic                                            
 [spectrogram,t,f] = MTSpectrogram([EEG.time, EEG.data*0.01],...
     'window',1,'overlap',0.75,'range',frange);              % computes the spectrogram
-bands = SpectrogramBands(spectrogram,f,'broadLow',pband);   % computes power in different bands
+bands = SpectrogramBands(spectrogram,f, ...
+    'broadLow',pband,'delta',[0 pband(1)]);   % computes power in different bands
 
 % Find where power crosses threhold (rising and falling edge)
-pb_delt_ratio = bands.broadLow./bands.delta;    % compute ratio of broadLow to delta
-tVal = prctile(pb_delt_ratio, ptCut);          % find the bandpower threshold value based on percentile threshold (ptCut)
-riseI = find(diff(pb_delt_ratio>tVal)>0) + 1;  % seizure rising edge index
-fallI = find(diff(pb_delt_ratio>tVal)<0) + 1;  % seizure falling edge index
+tVal = prctile(bands.broadLow, ptCut);          % find the bandpower threshold value based on percentile threshold (ptCut)
+riseI = find(diff(bands.broadLow>tVal)>0) + 1;  % seizure rising edge index
+fallI = find(diff(bands.broadLow>tVal)<0) + 1;  % seizure falling edge index
 
 %% Find putative seizures, merge those that happen close in time, detect troughs, and store everything in structure(sz)
 pzit = 1; % gap length under which to merge (seconds)
@@ -160,7 +161,8 @@ startEnd_interp(tooShortLog,:) = [];                % remove seizures that are t
 ts = cell2mat(arrayfun(@(x) find(x==EEG.time), ...
     startEnd_interp,...
     'UniformOutput',0));                            % getting start and end indices
-outfn = sprintf('%s%s%s_seizures.mat',fp,'\',fn);   % name of the output file
+outfn = sprintf('%s%s%s_Ch%02d_seizures.mat', ...
+    fp,'\',fn,eegChannel);   % name of the output file
 
 for ii = 1:size(ts,1)
     eegInd = ts(ii,1):ts(ii,2);
@@ -188,7 +190,8 @@ for ii = 1:size(ts,1)
         trInt = diff(locs) * (1/EEG.finalFS); % time interval between troughs
         tooSmall = find(trInt < goodTRint,1,'first'); %
     end
-    seizures(ii).trTimeInds = locs; seizures(ii).trVals = -trgh; % store trough time (indices) and values in sz structure
+    seizures(ii).trTimeInds = locs; 
+    seizures(ii).trVals = -trgh; % store trough time (indices) and values in sz structure
     seizures(ii).filename = outfn;
         seizures(ii).parameters = detectionParameters;
     end
@@ -201,12 +204,12 @@ for ii = 1:size(ts,1)
     %% Plotting trace, thresholds, and identified putative seizures
     if plotFlag % plotting option
         figure; ax(1) = subplot(311);
-        plot(EEG.time, EEG.data,'k','LineWidth',2); title('EEG');
+        plot(EEG.time, EEG.data,'k','LineWidth',2); title('Raw Signal');
         hold on
         plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
         ax(2) = subplot(312);
-        plot(t,pb_delt_ratio,'k','linewidth',2);
-        title(sprintf('Power in %d-%dHz Range',pband(1),pband(2)));
+        plot(t,bands.broadLow,'k','linewidth',2);
+        title(sprintf('Power Ratio: %d-%dHz-to-Delta',pband(1),pband(2)));
         hold on
         plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
         ax(3) = subplot(313);
@@ -223,6 +226,7 @@ for ii = 1:size(ts,1)
                 'EdgeColor','none','FaceAlpha',0.25);
         end
     end % plotting option end
+    set(gcf().Children,'FontSize',20);
 
     [fp, fn, fext] = fileparts(outfn);
     try % try statement here because sometimes saving fails due to insufficient permissions
