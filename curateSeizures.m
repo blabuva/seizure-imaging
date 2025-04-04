@@ -19,7 +19,12 @@ p = plot(0,0,'k','LineWidth',1.5); % initialize line plot for EEG
 set(ax,'YLim',yl);
 hold on
 sc = scatter([],[],108,'ob','lineWidth',2.5); % initialize scatter for troughs
-ki = 1; %intialize looping index for use below
+uLL = cellfun(@(x) strcmp(x,'Unlabeled'), {seizures.type}); % logical for 'unlabeled' events
+if any(uLL)
+    ki = find(uLL,1,'first');
+else
+    ki = 1;
+end
 key = 1; %initialize key (used to end while loop below)
 while ~isequal(key,'return')
     set(p,'XData',seizures(ki).time,...

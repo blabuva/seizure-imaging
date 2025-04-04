@@ -171,7 +171,7 @@ for ii = 1:size(ts,1)
     if strcmp(fext,'.bin')
         seizures(ii).idx = EEG.idx(eegInd);
     end
-    seizures(ii).type = 'Unclassified';
+    seizures(ii).type = 'Unlabeled';
     [trgh, locs] = fpFun(-seizures(ii).EEG); % find troughs (negative peaks)
     locs(-trgh>ttv) = []; % remove those troughs that don't cross the threshold (ttv)
     trgh(-trgh>ttv) = []; % remove those troughs that don't cross the threshold (ttv)
@@ -204,12 +204,12 @@ for ii = 1:size(ts,1)
     %% Plotting trace, thresholds, and identified putative seizures
     if plotFlag % plotting option
         figure; ax(1) = subplot(311);
-        plot(EEG.time, EEG.data,'k','LineWidth',2); title('Raw Signal');
+        plot(EEG.time, EEG.data,'k','LineWidth',2); title('Raw Signal (noise removed)');
         hold on
         plot(get(gca,'xlim'),[ttv,ttv],'b','linewidth',1.5); hold off;
         ax(2) = subplot(312);
         plot(t,bands.broadLow,'k','linewidth',2);
-        title(sprintf('Power Ratio: %d-%dHz-to-Delta',pband(1),pband(2)));
+        title(sprintf('%d-%dHz Power',pband(1),pband(2)));
         hold on
         plot(get(gca,'xlim'),[tVal,tVal],'r','linewidth',1.5); hold off;
         ax(3) = subplot(313);
