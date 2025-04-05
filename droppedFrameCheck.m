@@ -1,10 +1,20 @@
+function droppedFrameCheck(eeg_filename,dcimg_filename)
 %% Dropped frame check
-fp = uigetdir;
-dList = dir(fp);
-fn = dList(contains({dList.name},'.abf')).name;
-eeg_filename = fullfile(fp,fn);
+% fp = uigetdir;
+% dList = dir(fp);
+% fn = dList(contains({dList.name},'.abf')).name;
+% eeg_filename = fullfile(fp,fn);
+% eeg_filename = 'X:\SI_Data\Sakina Gria x GCaMP_server\20240930\20240930_228_0000.abf';
+if ~exist("eeg_filename",'var')
+    [fn,fp] = uigetfile('*.abf','Select EEG file');
+    eeg_filename = fullfile(fp,fn);
+end
+if ~exist("dcimg_filename",'var')
+    [fn,fp] = uigetfile('*.dcimg','Select DCIMG file');
+    dcimg_filename = fullfile(fp,fn);
+end
 [EEG,si,h] = abf2load(eeg_filename);
-x = EEG(:,2)>3; % generating TTL trace
+x = EEG(:,2)>1; % generating TTL trace
 rte = diff(x)>0; %rising TTL edges
 z = diff(x)<0; %falling TTL edges
 yi = find(rte)+1; % indices of rising edges
@@ -25,8 +35,8 @@ if 0
 end
 
 %%
-fn = dList(contains({dList.name},'.dcimg')).name;
-dcimg_filename = fullfile(fp,fn);
+% fn = dList(contains({dList.name},'.dcimg')).name;
+% dcimg_filename = fullfile(fp,fn);
 hdcimg = dcimgmex('open',dcimg_filename);                     % open the original .dcimg file
 nof = dcimgmex('getparam',hdcimg,'NUMBEROF_FRAME');     % retrieve the total number of frames in the session
 dcimgmex('close',hdcimg);
