@@ -117,12 +117,14 @@ plot(pb.time,pb.high,'r');
 linkaxes(ax,'x');
 
 %% ---- Store relevant data in structure to be output/saved ---- %%
-% ov.fluor.time = bulk_dfTrace;
-% ov.fluor.data = frameTimes;
-% ov.speed.time = bc;
-% ov.speed.data = spd_smoothed;
-% ov.lfpPower.time = pb.time;
-% ov.lfpPower.high = pb.high;
-% ov.lfpPower.low = pb.low;
+ov.fluor.time = bulk_dfTrace;
+ov.fluor.data = frameTimes;
+ov.speed.time = bc;
+ov.speed.data = spd_smoothed;
+ov.lfp.power_time = pb.time;
+ov.lfp.raw_data = d(:,1);
+ov.lfp.raw_time = tv; 
+ov.lfp.high = pb.high;
+ov.lfp.low = pb.low;
 
 end % function end
