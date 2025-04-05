@@ -7,13 +7,11 @@ function dcimgToBin(filename)
 %   NONE - the .imgbin file is saved to the same directory with the same name as the .dcimg file; only the extension changes to .imgbin
 %
 % Written by Scott Kilianski
-% 10/11/2022
+% Updated 4/4/2025
 
 %%
-% filename = 'Z:\CSD_Project\20230818\brain00001.dcimg';
-defaultFile = 'X:\SI_012_20221215\SI_012_2022121500001.dcimg';
 if ~exist('filename','var')
-    filename = defaultFile;
+    error('Needs filename string as function input');
 end
 [pth,nm,ext] = fileparts(filename);
 foutN = fullfile(pth,strcat(nm,'.imgbin'));                   % filename of the output file (.imgbin)
@@ -40,7 +38,7 @@ while ~dcimgmex('iseof', hdcimg) % check if end of file
     cf = dcimgmex('getparam',hdcimg,...
         'CURRENT_FRAMEINDEX');              % read the number of the current frame
     waitbar(double(cf)/double(nof),rwbar);  % update waitbar status
-    fprintf('Loop cf: %.2f seconds\n',toc(loopClock));
+    % fprintf('Loop cf: %.2f seconds\n',toc(loopClock));
 end
 fprintf('Read-write process took %.2f minutes\n',toc(rwClock)/60);
 dcimgmex('close',hdcimg);
