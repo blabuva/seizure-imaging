@@ -17,20 +17,9 @@ cph = cpselect(label2rgb(dca.labs),brain_img);
 %% Apply image morphing to register image to atlas
 % reg_img = imageMorphing(brain_img,atlas_img,fixedPoints,movingPoints);
 reg_img = imageMorphing(brain_img,dca.labs,fixedPoints,movingPoints);
-
-%% Load imaging data into workspace and reshape it for filtering below
-sz = size(img.Data.frames);
-mtx = reshape(img.Data.frames, sz(1)*sz(2),sz(3))'; % linearize pixels
-
-%% Apply dF/F function and reshape data back into height x width x frames shape
-Fs = 10; % sampling frequency (Hz)
-dff = pixelFilter(mtx,25,.1);
-dff = reshape(dff',ysz,xsz,zsz);        % reshape the imaging matrix back into (height x width x # of frames)
+reg_img(isnan(reg_img)) = 1; % set all unmorphed regions to 1 (i.e. root label)
 
 %% Segment image into separate cortical areas
-% Iteration starts at 2 because 1 is 'root' (i.e. no brain region assigned)
-% for ii = 2:numel(dca.labNames)
-%     cmask = reg_img==ii; % current image mask
-%     dft(ii,:) = cframe(cmask,:); % dF/F trace 
-% end
+[L, numRegions] = bwlabel(~imbinarize(reg_img));
+
 %% 

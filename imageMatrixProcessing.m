@@ -10,9 +10,9 @@ colormap(gray);
 %% Draw mask and apply to image matrix
 fprintf('Waiting for user to draw contour around imaging area...\n');
 fhShape = drawassisted;                 % draw shape
+msk = fhShape.createMask;               % create mask from shape
 fprintf('User is finished drawing\n');
 close(drawFig);
-msk = fhShape.createMask;               % create mask from shape
 crange = find(sum(msk,1),1,'first'):find(sum(msk,1),1,'last');
 rrange = find(sum(msk,2),1,'first'):find(sum(msk,2),1,'last');
 ysz = numel(rrange);

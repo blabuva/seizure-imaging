@@ -2,7 +2,7 @@ function [dff] = pixelFilter(mtx,Fs,Fc)
 %% pixelFilter Low-cut filter for imgaging matrix (height x width x frames)
 
 % INPUTS:
-%   mtx - data matrix. 3rd dimension is frame
+%   mtx - data matrix. 1st dimension will be filtered
 %   Fs - sampling rate in Hz
 %   Fc - cutoff frequency in Hz
 %
@@ -10,7 +10,7 @@ function [dff] = pixelFilter(mtx,Fs,Fc)
 %   dff - deltaF/F matrix. Filtered and smoothed output matrix
 %
 % Written by Scott Kilianski
-% Updated 8/28/2023
+% Updated 04/07/2025
 
 %% Function body
 % Set the sampling rate and cutoff frequency
@@ -22,9 +22,9 @@ filtClock = tic;                        % Function clock
 [d, c] = butter(2, Fc/(Fs/2), 'low');   % Create the low?? (low-cut or low-pass??) filter
 lpmtx = filtfilt(d,c, double(mtx));     % Apply the filter to produce
 dff = (double(mtx)-lpmtx)./lpmtx;       % subtract the filtered matrix from the original and divide by filtered matrix (output is deltaF/F)
-dff = smoothdata(dff,1,"gaussian",5);   % smooth data temporally with gaussian window
+% dff = smoothdata(dff,1,"gaussian",5);   % smooth data temporally with gaussian window
 
-fprintf('Filtering and smoothing took %.2f seconds\n',toc(filtClock));
+fprintf('Filtering took %.2f seconds\n',toc(filtClock));
 
 %% Plotting optional
 % figure; 
