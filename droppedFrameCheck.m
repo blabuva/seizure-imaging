@@ -1,4 +1,4 @@
-function droppedFrameCheck(eeg_filename,dcimg_filename)
+function ndf = droppedFrameCheck(eeg_filename,dcimg_filename)
 %% Dropped frame check
 % fp = uigetdir;
 % dList = dir(fp);
@@ -44,7 +44,7 @@ dcimgmex('close',hdcimg);
 ndf = sum(rte) - nof; %number of dropped frames (# rising TTL edges minus number of frames)
 if ndf %if number of dropped frames isn't 0, find where the frames were else
     fprintf('%d dropped frames. Identifying times of dropped frames...\n',ndf);
-    %%% HERE'S WHERE I HAVE TO CHECK THE INTER-FRAME INTERVALS %%%
+    figure; histogram(diff(yi)./FS);
 else
     fprintf('No dropped frames! Woohoooo!\n');
 end
