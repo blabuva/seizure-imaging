@@ -1,5 +1,5 @@
 function [dff] = pixelFilter(mtx,Fs,Fc)
-%% pixelFilter Low-cut filter for imgaging matrix (height x width x frames)
+%% pixelFilter Caclulates change in fluorescence 
 
 % INPUTS:
 %   mtx - data matrix. 1st dimension will be filtered
@@ -21,6 +21,8 @@ function [dff] = pixelFilter(mtx,Fs,Fc)
 filtClock = tic;                        % Function clock
 [d, c] = butter(2, Fc/(Fs/2), 'low');   % Create the low?? (low-cut or low-pass??) filter
 lpmtx = filtfilt(d,c, double(mtx));     % Apply the filter to produce
+% twin = 3;
+% lpmtx = movmean(double(mtx),twin*Fs,1);
 dff = (double(mtx)-lpmtx)./lpmtx;       % subtract the filtered matrix from the original and divide by filtered matrix (output is deltaF/F)
 % dff = smoothdata(dff,1,"gaussian",5);   % smooth data temporally with gaussian window
 

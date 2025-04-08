@@ -1,7 +1,8 @@
 %% --- 0 Input files --- %%
-dcimg_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20240930/20240930_22800001.dcimg';
-eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20240930/20240930_228_0000.abf'; 
-img_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20240930/20240930_22800001.imgbin'; 
+dcimg_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_23000001.dcimg';
+eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_0000.abf'; 
+img_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_23000001.imgbin'; 
+pointsFile = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_mappedPoints.m';
 
 %% --- 1 Check for dropped frames --- %%
 ndf = droppedFrameCheck(eeg_filename,dcimg_filename);
@@ -18,21 +19,39 @@ cph = cpselect(label2rgb(dca.labs),...
     brain_img);                         % select matching points in image and atlas
 
 %% --- 4 Apply image morphing to register image to atlas --- %%
+% load(pointsFile,'fixedPoints','movingPoints');
 reg_img = imageMorphing(brain_img,dca.labs,fixedPoints,movingPoints);
 
-%% Load imaging data into workspace and reshape it for filtering below
-sz = size(img.Data.frames);
+%% --- 5 Generate dF/F trace for all pixels --- %%
+sz = size(img.Data.frames); 
+
+% -- Load imaging data into workspace and reshape it for filtering below -- %
 mtx = reshape(img.Data.frames, sz(1)*sz(2),sz(3))'; % linearize pixels
+% --------------------------------------------------------------------------%
 
-%% Apply dF/F function and reshape data back into height x width x frames shape
-Fs = 10; % sampling frequency (Hz)
-dff = pixelFilter(mtx,Fs,.1);
-dff = reshape(dff',ysz,xsz,zsz);        % reshape the imaging matrix back into (height x width x # of frames)
+[FT, Fs, EEG, tv] = getFrameTimes(eeg_filename,sz(3)); % get frame times and Fs
+lowPass = .1; % low pass frequency (Hz)
+dff = pixelFilter(mtx,Fs,lowPass);       % Apply dF/F function
+dff = reshape(dff',sz(1),sz(2),sz(3));    % reshape the imaging matrix back into (height x width x # of frames)
 
-%% Segment image into separate cortical areas
+%% --- 6 Use register image as mask to segment image series into discrete regions --- %%
 % Iteration starts at 2 because 1 is 'root' (i.e. no brain region assigned)
-% for ii = 2:numel(dca.labNames)
-%     cmask = reg_img==ii; % current image mask
-%     dft(ii,:) = cframe(cmask,:); % dF/F trace 
-% end
-%% 
+fprintf('Segmenting image series into discrete regions...\n')
+segClock = tic;
+segWait = waitbar(0,'Segmenting image series...'); 
+for ii = 2:numel(dca.labNames)
+    cmask = repmat(reg_img==ii, 1, 1, sz(3)); % current image mask
+    dft(ii,:) = sum(dff.*cmask,[1,2])./sum(cmask,[1,2]); % mean dF/F trace with the current mask
+    waitbar(ii/(numel(dca.labNames)-1));
+end
+close(segWait);
+fprintf('Segmenting took %.2f minutes \n',toc(segClock)/60); 
+
+
+% --- Make output structure to save --- %
+pd.dft = dft;
+pd.FT = FT; 
+pd.reg_img = reg_img;
+pd.labNames = dca.labNames;
+pd.eeg.data = EEG; 
+pd.eeg.tv = tv; % time vector for EEG
