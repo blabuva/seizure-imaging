@@ -1,8 +1,8 @@
 %% --- 0 Input files --- %%
-dcimg_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_23000001.dcimg';
-eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_0000.abf'; 
-img_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_23000001.imgbin'; 
-pointsFile = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_mappedPoints.m';
+dcimg_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_25100001.dcimg';
+eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_251_0001.abf'; 
+img_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_25100001.imgbin'; 
+% pointsFile = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_mappedPoints.m';
 
 %% --- 1 Check for dropped frames --- %%
 ndf = droppedFrameCheck(eeg_filename,dcimg_filename);
