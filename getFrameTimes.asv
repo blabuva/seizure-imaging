@@ -5,7 +5,6 @@ function [FT, FS, EEG, tv] = getFrameTimes(eeg_filename,nof,tlim)
 % INPUTS:
 %   eeg_filename: full path to .abf file
 %   nof: number of frames (any extra TTLs are ignored)
-%   tlim: 2-element vector containing time limits (in seconds)
 %
 % OUTPUTS:
 %   FT - frame times (in seconds)
@@ -15,16 +14,15 @@ function [FT, FS, EEG, tv] = getFrameTimes(eeg_filename,nof,tlim)
 % Updated 05/23/2025
 
 %% Function body
-ttlThresh = 2; % voltage threshold for detecting TTLs
 [EEG,si] = abf2load(eeg_filename);
 SI = si * 10e-7; % sampling interval in seconds
-tv = (0:length(EEG(:,2))-1)*SI; % time vector
-keepLog = tv > tlim(1) & tv < tlim(2); % find all samples within the time limits
-TTLtrace = EEG(:,2) .* keepLog'; % changing all samples outside of time limits 
-x = TTLtrace>ttlThresh; % generating TTL trace by threhsolding
+tv = ((1:length(EEG))-1)*SI; % time vector
+EEGtv > tlim(1) & tv < tlim(2);
+x = EEG(:,2)>1; % generating TTL trace
 rte = diff(x)>0; %rising TTL edges
 ri = find(rte,nof,'first'); % indices of rising edges
 FS = 1/(mean(diff(ri))*SI); % the sampling frequency of the camera
 FT = ri * SI; 
+tv = (0:length(EEG(:,2))-1)*SI;
 
 end % function end
