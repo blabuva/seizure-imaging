@@ -1,14 +1,32 @@
 %% --- 0 Input files --- %%
-% dcimg_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_25100001.dcimg';
-% eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_251_0001.abf'; 
-eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20250227_GriaxGCaMP/20250227_273_0000.abf';
-img_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20250227_GriaxGCaMP/273/20250227_27300002.imgbin'; 
+topDir = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\';
+% topDir = uigetdir;
+dd = dir(topDir);
+fnames = {dd.name};
+dcimg_file = fullfile(topDir,dd(contains(fnames,'.dcimg')).name);
+eeg_filename= fullfile(topDir,dd(contains(fnames,'.abf')).name);
+img_file= fullfile(topDir,dd(contains(fnames,'.imgbin')).name);
+% dcimg_file = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\20250227_27300002.dcimg';
+% % eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_251_0001.abf'; 
+% eeg_filename = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\20250227_273_0000.abf';
+% img_file = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\20250227_27300002.imgbin'; 
 % pointsFile = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_mappedPoints.m';
+% tlimFile = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\tlim.mat';
 
-%% --- 1 Check for dropped frames --- %%
-ndf = droppedFrameCheck(eeg_filename,dcimg_file);
+%% --- Get time limits for imaging epoch --- %% 
+plotEEGandCameraTTL(eeg_filename);
+% === SAVE tlim manually === %
+
+%%
+load(fullfile(topDir,'tlim.mat'),'tlim');
+hdcimg = dcimgmex('open',dcimg_file);                     % open the original .dcimg file
+nof = dcimgmex('getparam',hdcimg,'NUMBEROF_FRAME');     % retrieve the total number of frames in the session
+dcimgmex('close',hdcimg);
+
+[FT, FS, EEG, tv] = getFrameTimes(eeg_filename,nof,tlim);
 
 %% --- 2 Convert to .imgbin --- %%
+% === THIS CAN ONLY BE DONE ON WINDOWS OS === %
 dcimgToBin(dcimg_file);
 
 %% --- 2.5 temporary, motion correct the image series --- %%
@@ -66,7 +84,7 @@ mtx = reshape(M1, sz(1)*sz(2),sz(3))'; % linearize pixels
 % --------------------------------------------------------------------------%
 
 tlim = load('tlim.mat','tlim');
-[FT, Fs, EEG, tv] = getFrameTimes(eeg_filename,sz(3),tlim); % get frame times and Fs
+% [FT, Fs, EEG, tv] = getFrameTimes(eeg_filename,sz(3),tlim); % get frame times and Fs
 lowPass = .1; % low pass frequency (Hz)
 dff = pixelFilter(mtx,Fs,lowPass);       % Apply dF/F function
 dff = reshape(dff',sz(1),sz(2),sz(3));    % reshape the imaging matrix back into (height x width x # of frames)

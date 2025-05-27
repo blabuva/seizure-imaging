@@ -26,5 +26,7 @@ rte = diff(x)>0; %rising TTL edges
 ri = find(rte,nof,'first'); % indices of rising edges
 FS = 1/(mean(diff(ri))*SI); % the sampling frequency of the camera
 FT = ri * SI; 
+fp = fileparts(eeg_filename);
+save(fullfile(fp,'ft.mat'),"FT","FS","EEG","tv",'-v7.3');
 
 end % function end
