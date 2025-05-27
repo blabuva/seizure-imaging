@@ -2,7 +2,7 @@
 % dcimg_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_25100001.dcimg';
 % eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_251_0001.abf'; 
 eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20250227_GriaxGCaMP/20250227_273_0000.abf';
-img_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20250227_GriaxGCaMP/20250227_27300002.imgbin'; 
+img_file = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20250227_GriaxGCaMP/273/20250227_27300002.imgbin'; 
 % pointsFile = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_mappedPoints.m';
 
 %% --- 1 Check for dropped frames --- %%
@@ -27,23 +27,34 @@ tic; [M1,shifts1,template1,options_rigid] = normcorre_mm(Y,options_rigid); toc
 %% --- 3 Manually map points on image to dorsal cortex atlas --- %%
 load('dorsalCortexAtlas.mat','dca');    % load the atlas data
 % img = imgbinRead(img_file);             % read in the imaging data
-% frame1 = img.Data.frames(:,:,1);        % get the first frame
-% brain_img = im2uint8(frame1);           % convert to uint8 for morphing
+frame1 = img.Data.frames(:,:,1);        % get the first frame
+brain_img = im2uint8(frame1);           % convert to uint8 for morphing
 
 % --- convert first frame to uint8 --- % 
-brain_img = M1(:,:,1);
-A_norm = brain_img - min(brain_img(:));
-A_norm = A_norm / max(A_norm(:));
-brain_img = uint8(A_norm * 255);
+% brain_img = M1(:,:,1);
+% A_norm = brain_img - min(brain_img(:));
+% A_norm = A_norm / max(A_norm(:));
+% brain_img = uint8(A_norm * 255);
+
+topClim = 25;
+img_scaled = brain_img * (255 / topClim);
+
+% Clip any potential out-of-bounds values (optional safety)
+img_scaled = min(max(img_scaled, 0), 255);
+
+% Convert back to uint8 if needed
+img_uint8 = uint8(round(img_scaled));
+img_rotated = rot90(img_uint8, 2);
 
 % brain_img = im2uint8(M1(:,:,1));
 % brain_img = M1(:,:,1); % -- DO I NEED TO CONVERT TO UINT8 SOMEHOW????
 cph = cpselect(label2rgb(dca.labs),...
-    brain_img);                         % select matching points in image and atlas
+    img_rotated);                         % select matching points in image and atlas
 
 %% --- 4 Apply image morphing to register image to atlas --- %%
 % load(pointsFile,'fixedPoints','movingPoints');
 reg_img = imageMorphing(brain_img,dca.labs,fixedPoints,movingPoints);
+reg_img = rot90(reg_img, 2); % rotating back to original orientation
 
 %% --- 5 Generate dF/F trace for all pixels --- %%
 % sz = size(img.Data.frames); 
@@ -54,7 +65,8 @@ sz = size(M1);
 mtx = reshape(M1, sz(1)*sz(2),sz(3))'; % linearize pixels
 % --------------------------------------------------------------------------%
 
-[FT, Fs, EEG, tv] = getFrameTimes(eeg_filename,sz(3)); % get frame times and Fs
+tlim = load('tlim.mat','tlim');
+[FT, Fs, EEG, tv] = getFrameTimes(eeg_filename,sz(3),tlim); % get frame times and Fs
 lowPass = .1; % low pass frequency (Hz)
 dff = pixelFilter(mtx,Fs,lowPass);       % Apply dF/F function
 dff = reshape(dff',sz(1),sz(2),sz(3));    % reshape the imaging matrix back into (height x width x # of frames)
