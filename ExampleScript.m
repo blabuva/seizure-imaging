@@ -48,10 +48,10 @@ img_uint8 = uint8(round(img_scaled));
 % brain_img = im2uint8(M1(:,:,1));
 % brain_img = M1(:,:,1); % -- DO I NEED TO CONVERT TO UINT8 SOMEHOW????
 cph = cpselect(label2rgb(dca.labs),...
-    img_rotated);                         % select matching points in image and atlas
+    img_uint8);                         % select matching points in image and atlas
 
 %% --- 0.5 Apply image morphing to register image to atlas --- %%
-reg_img = imageMorphing(rot90(brain_img,2),dca.labs,fixedPoints,movingPoints);
+reg_img = imageMorphing(brain_img,dca.labs,fixedPoints,movingPoints);
 reg_img = rot90(reg_img, 2); % rotating back to original orientation
 save(fullfile(topDir,'reg_img.mat'),'reg_img','-v7.3');
 
