@@ -106,3 +106,4 @@ pd.reg_img = reg_img;
 pd.labNames = dca.labNames;
 pd.eeg.data = EEG; 
 pd.eeg.tv = tv; % time vector for EEG
+save(fullfile(topDir,'pd.mat'),'pd','-v7.3');
