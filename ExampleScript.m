@@ -1,48 +1,29 @@
-%% --- 0 Input files --- %%
-% topDir = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\';
+%% --- 0 Set input files --- %%
+% topDir = ''; % Path to directory here
 topDir = uigetdir;
 dd = dir(topDir);
 fnames = {dd.name};
 dcimg_file = fullfile(topDir,dd(contains(fnames,'.dcimg')).name);
 eeg_filename= fullfile(topDir,dd(contains(fnames,'.abf')).name);
-img_file= fullfile(topDir,dd(contains(fnames,'.imgbin')).name);
-% dcimg_file = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\20250227_27300002.dcimg';
-% % eeg_filename = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241126/20241126_251_0001.abf'; 
-% eeg_filename = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\20250227_273_0000.abf';
-% img_file = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\20250227_27300002.imgbin'; 
-% pointsFile = '/media/scott3X/SI_Data/Sakina Gria x GCaMP_server/20241002/20241002_230_mappedPoints.m';
-% tlimFile = 'X:\SI_Data\Sakina Gria x GCaMP_server\20250227_GriaxGCaMP\273\tlim.mat';
+% img_file= fullfile(topDir,dd(contains(fnames,'.imgbin')).name);
 
-%% --- Get time limits for imaging epoch --- %% 
+%% --- 0.1 Convert to .imgbin --- %%
+% === THIS CAN ONLY BE DONE ON WINDOWS OS === %
+dcimgToBin(dcimg_file);
+img_file= fullfile(topDir,dd(contains(fnames,'.imgbin')).name);
+
+%% --- 0.2 Get time limits for imaging epoch --- %% 
 tlim = pick_tlims(eeg_filename); 
 
-%%
-load(fullfile(topDir,'tlim.mat'),'tlim');
+%% --- 0.3 Get frame times and save them --- %%
 hdcimg = dcimgmex('open',dcimg_file);                     % open the original .dcimg file
 nof = dcimgmex('getparam',hdcimg,'NUMBEROF_FRAME');     % retrieve the total number of frames in the session
 dcimgmex('close',hdcimg);
 
 [FT, FS, EEG, tv] = getFrameTimes(eeg_filename,nof,tlim);
+save(fullfile(topDir,'ft.mat'),'FT','FS','EEG','tv','-v7.3');
 
-%% --- 2 Convert to .imgbin --- %%
-% === THIS CAN ONLY BE DONE ON WINDOWS OS === %
-dcimgToBin(dcimg_file);
-
-%% --- 2.5 temporary, motion correct the image series --- %%
-img = imgbinRead(img_file);             % read in the imaging data
-
-Y = single(img.Data.frames);                 % convert to single precision 
-siz = size(img.Data.frames);
-Y = Y - min(Y(:));                          % baseline (minimum) subtraction
-%%
-% set parameters
-options_rigid = NoRMCorreSetParms('d1',siz(1),'d2',siz(2),'bin_width',200,'max_shift',15,'us_fac',50,'init_batch',200);
-% perform motion correction - rigid
-tic; [M1,shifts1,template1,options_rigid] = normcorre_mm(Y,options_rigid); toc
-clear Y % to save on memory
-save(fullfile(topDir,'template.mat'),'template1','-v7.3');
-
-%% --- 3 Manually map points on image to dorsal cortex atlas --- %%
+%% --- 0.4 Manually map points on image to dorsal cortex atlas --- %%
 load('dorsalCortexAtlas.mat','dca');    % load the atlas data
 img = imgbinRead(img_file);             % read in the imaging data
 frame1 = img.Data.frames(:,:,1);        % get the first frame
@@ -69,12 +50,28 @@ img_uint8 = uint8(round(img_scaled));
 cph = cpselect(label2rgb(dca.labs),...
     img_rotated);                         % select matching points in image and atlas
 
-%% --- 4 Apply image morphing to register image to atlas --- %%
-% load(pointsFile,'fixedPoints','movingPoints');
+%% --- 0.5 Apply image morphing to register image to atlas --- %%
 reg_img = imageMorphing(rot90(brain_img,2),dca.labs,fixedPoints,movingPoints);
 reg_img = rot90(reg_img, 2); % rotating back to original orientation
+save(fullfile(topDir,'reg_img.mat'),'reg_img','-v7.3');
+
+%% --- 2.5 temporary, motion correct the image series --- %%
+Y = single(img.Data.frames);                 % convert to single precision 
+siz = size(img.Data.frames);
+Y = Y - min(Y(:));                          % baseline (minimum) subtraction
+
+% set parameters
+options_rigid = NoRMCorreSetParms('d1',siz(1),'d2',siz(2),'bin_width',200,'max_shift',15,'us_fac',50,'init_batch',200);
+% perform motion correction - rigid
+tic; [M1,shifts1,template1,options_rigid] = normcorre_mm(Y,options_rigid); toc
+clear Y % to save on memory
+save(fullfile(topDir,'template.mat'),'template1','-v7.3');
+
 
 %% --- 5 Generate dF/F trace for all pixels --- %%
+% load(fullfile(topDir,'tlim.mat'),'tlim');
+% load(fullfile(topDir,'ft.mat'),'FT','FS','EEG','tv');
+
 sz = size(img.Data.frames); 
 % sz = size(M1);
 

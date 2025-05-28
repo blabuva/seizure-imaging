@@ -1,4 +1,4 @@
-function plotEEGandCameraTTL(eeg_filename)
+function pf = plotEEGandCameraTTL(eeg_filename)
 %% plotEEGandCameraTTL Plots the EEG and Camera TTLs 
 %
 % INPUTS:
@@ -8,13 +8,13 @@ function plotEEGandCameraTTL(eeg_filename)
 %   A figure showing the relevant data
 %
 % Written by Scott Kilianski
-% Updated 05/23/2025
+% Updated 05/28/2025
 
 %% === Function Body === %%
 [EEG,si] = abf2load(eeg_filename);
 SI = si * 10e-7; % sampling interval in seconds
 tv = ((1:length(EEG))-1)*SI;
-figure;
+pf = figure;
 sax(1) = subplot(211);
 plot(tv,EEG(:,1),'k');
 title('EEG');
