@@ -12,6 +12,7 @@ function pf = plotEEGandCameraTTL(eeg_filename)
 
 %% === Function Body === %%
 [EEG,si] = abf2load(eeg_filename);
+EEG = [EEG(:,3), EEG(:,1), EEG(:,2)]; % reorder EEG for data collected after April 2025
 SI = si * 10e-7; % sampling interval in seconds
 tv = ((1:length(EEG))-1)*SI;
 pf = figure;

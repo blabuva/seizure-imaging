@@ -5,7 +5,7 @@ dd = dir(topDir);
 fnames = {dd.name};
 dcimg_file = fullfile(topDir,dd(contains(fnames,'.dcimg')).name);
 eeg_filename= fullfile(topDir,dd(contains(fnames,'.abf')).name);
-% img_file= fullfile(topDir,dd(contains(fnames,'.imgbin')).name);
+img_file= fullfile(topDir,dd(contains(fnames,'.imgbin')).name);
 
 %% --- 0.1 Convert to .imgbin --- %%
 % === THIS CAN ONLY BE DONE ON WINDOWS OS === %
@@ -16,9 +16,11 @@ img_file= fullfile(topDir,dd(contains(fnames,'.imgbin')).name);
 tlim = pick_tlims(eeg_filename); 
 
 %% --- 0.3 Get frame times and save them --- %%
-hdcimg = dcimgmex('open',dcimg_file);                     % open the original .dcimg file
-nof = dcimgmex('getparam',hdcimg,'NUMBEROF_FRAME');     % retrieve the total number of frames in the session
-dcimgmex('close',hdcimg);
+% hdcimg = dcimgmex('open',dcimg_file);                     % open the original .dcimg file
+% nof = dcimgmex('getparam',hdcimg,'NUMBEROF_FRAME');     % retrieve the total number of frames in the session
+% dcimgmex('close',hdcimg);
+img = imgbinRead(img_file);             % read in the imaging data
+nof = size(img.Data.frames,3);
 
 [FT, FS, EEG, tv] = getFrameTimes(eeg_filename,nof,tlim);
 save(fullfile(topDir,'ft.mat'),'FT','FS','EEG','tv','-v7.3');
@@ -36,7 +38,7 @@ brain_img = rot90(brain_img,2);         % rotate 180degrees so it's anterior-pos
 % A_norm = A_norm / max(A_norm(:));
 % brain_img = uint8(A_norm * 255);
 
-topClim = 50;
+topClim = 150;
 img_scaled = brain_img * (255 / topClim);
 
 % Clip any potential out-of-bounds values (optional safety)

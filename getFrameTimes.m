@@ -17,6 +17,7 @@ function [FT, FS, EEG, tv] = getFrameTimes(eeg_filename,nof,tlim)
 %% Function body
 ttlThresh = 2; % voltage threshold for detecting TTLs
 [EEG,si] = abf2load(eeg_filename);
+EEG = [EEG(:,3), EEG(:,1), EEG(:,2)]; % reorder EEG for data collected after April 2025
 SI = si * 10e-7; % sampling interval in seconds
 tv = (0:length(EEG(:,2))-1)*SI; % time vector
 keepLog = tv > tlim(1) & tv < tlim(2); % find all samples within the time limits
